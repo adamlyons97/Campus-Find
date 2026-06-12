@@ -38,11 +38,16 @@
 ---
 
 ##  6. Features & Functionalities
-*   **Authentication Hub:** Secure login restricted to university domains with automatic field validation.
-*   **Report Lost/Found Items:** Advanced form entry allowing users to input specific item descriptions, select predefined categories, tag a campus location, and upload clear photo evidence.
-*   **AI-Powered Smart Match:** A smart feature utilizing natural language processing to alert users if a newly reported lost item resembles an existing found item listing.
-*   **Secure Claim System:** Third-party verification interface where users must describe specific private details of an item before a claim status shifts from *Pending* to *Approved*.
-*   **Status Management:** Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states.
+*   **Authentication Hub:
+  ** Secure login restricted to university domains with automatic field validation.
+*   **Report Lost/Found Items:
+  ** Advanced form entry allowing users to input specific item descriptions, select predefined categories, tag a campus location, and upload clear photo evidence.
+*   **AI-Powered Smart Match:
+  ** A smart feature utilizing natural language processing to alert users if a newly reported lost item resembles an existing found item listing.
+*   **Secure Claim System:
+  ** Third-party verification interface where users must describe specific private details of an item before a claim status shifts from *Pending* to *Approved*.
+*   **Status Management:
+  ** Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states.
 
 ---
 
