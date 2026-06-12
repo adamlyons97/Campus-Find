@@ -68,6 +68,7 @@ As shown in the layered diagram above, CampusFind follows a clean three-tier arc
   d) GeminiService — sends item description payloads to the Gemini API and returns match results
 
 3. Services Layer — Pure Dart classes with no Flutter dependencies. 
+
 a) FirestoreService manages all CRUD operations and real-time stream subscriptions. 
 
 b) StorageService handles image upload via Firebase Storage. 
