@@ -60,8 +60,11 @@ As shown in the layered diagram above, CampusFind follows a clean three-tier arc
 2. Business Logic (Provider) — Four core providers manage application state:
 
 a) ItemProvider — holds the items list stream from Firestore and triggers AI match checks on new submissions
+
 b) ClaimProvider — manages claim submission lifecycle and status polling
+
 c) AuthProvider — wraps Firebase Auth and enforces IIUM domain validation on login
+
 d) GeminiService — sends item description payloads to the Gemini API and returns match results
 
 3. Services Layer — Pure Dart classes with no Flutter dependencies. 
