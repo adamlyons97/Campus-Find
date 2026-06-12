@@ -82,6 +82,7 @@ State Management Justification — Provider was chosen over Riverpod and BLoC fo
 
 
 ## 9. Data Model
+<img width="785" height="341" alt="image" src="https://github.com/user-attachments/assets/8d99b661-e21b-432d-aa81-aedfe9fc5ab9" />
 
 
 
