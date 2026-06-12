@@ -2,11 +2,11 @@
 
 ---
 
- ## 1. Group Members & Roles
-1. | LUEBAESA MUHAMMADLUTFI | 2210835 | 
-2. | MUHAMMAD AMMAR RAZIQ BIN ABDUL RAZAK | 2311619 | 
-3. | CHE MUHAMMAD HAKIMI BIN CHE ARSHAD | 2311665 |
-4. | AHMAD ADAM DANIAL BIN AB RAHMAN | 2319525 |
+ ## 1. Group Members
+1. LUEBAESA MUHAMMADLUTFI | 2210835 
+2. MUHAMMAD AMMAR RAZIQ BIN ABDUL RAZAK | 2311619 
+3. CHE MUHAMMAD HAKIMI BIN CHE ARSHAD | 2311665
+4. AHMAD ADAM DANIAL BIN AB RAHMAN | 2319525 
 
 ---
 
@@ -58,7 +58,7 @@ Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states
 
 ---
 
-## 🏗️ 8. Architecture / Technical Design
+## 8. Architecture / Technical Design
 The 'CampusFind' mobile application follows a strict **Layered Architecture** pattern, utilizing a clean separation of concerns. This approach ensures modularity, testability, and efficient real-time state updates.
 
 ### 8.1 Chosen State Management: **Riverpod**
@@ -119,7 +119,7 @@ lib/
         └── views/         # claim_submission_screen.dart
 ```
 
-## 🗂️ 9. Data Model
+## 9. Data Model
 <img width="785" height="341" alt="image" src="https://github.com/user-attachments/assets/8d99b661-e21b-432d-aa81-aedfe9fc5ab9" />
 
 Instead of a traditional relational SQL structure, **CampusFind** utilizes **Cloud Firestore**, a flexible, scalable NoSQL document database. 
@@ -225,7 +225,7 @@ This collection governs the verification process of reuniting people with their 
 ## 10. Flowchart
 ![image alt](https://github.com/adamlyons97/Campus-Find/blob/bbe8a18ccb678657bdb69b5a0db740cca9907ece/CampusFind.jpg)
 
-## 📚 11. References
+## 11. References
 *   Flutter Official Documentation: https://docs.flutter.dev
 *   Firebase Core & Firestore Documentation: https://firebase.google.com/docs
 *   Google AI Dart SDK (Gemini): https://pub.dev/packages/google_generative_ai
