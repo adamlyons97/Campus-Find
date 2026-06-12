@@ -47,6 +47,7 @@
 ---
 
 ## 7. UI Mockup
+<img width="353" height="702" alt="image" src="https://github.com/user-attachments/assets/587511f4-122d-4f65-8728-d1553f16023f" />
 
 
 
