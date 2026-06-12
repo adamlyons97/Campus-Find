@@ -104,7 +104,9 @@ Security Rules — All write operations require request.auth != null. Updates to
 
 
 
-## 11. References
-
-
-
+## 📚 11. References
+*   Flutter Official Documentation: https://docs.flutter.dev
+*   Firebase Core & Firestore Documentation: https://firebase.google.com/docs
+*   Google AI Dart SDK (Gemini): https://pub.dev/packages/google_generative_ai
+*   Provider State Management: https://pub.dev/packages/provider
+*   Go_Router Navigation Asset: https://pub.dev/packages/go_router
