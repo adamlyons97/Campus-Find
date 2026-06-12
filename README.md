@@ -52,6 +52,8 @@
 
 
 ## 8. Architecture/ Technical Design
+<img width="836" height="422" alt="Screenshot 2026-06-12 162813" src="https://github.com/user-attachments/assets/555748a9-20f2-462b-8367-d34ab654848b" />
+
 
 
 
