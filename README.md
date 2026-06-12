@@ -68,9 +68,11 @@ As shown in the layered diagram above, CampusFind follows a clean three-tier arc
   d) GeminiService — sends item description payloads to the Gemini API and returns match results
 
 3. Services Layer — Pure Dart classes with no Flutter dependencies. 
-FirestoreService manages all CRUD operations and real-time stream subscriptions. 
-StorageService handles image upload via Firebase Storage. 
-GeminiAPIService makes REST calls to generativelanguage.googleapis.com.
+a) FirestoreService manages all CRUD operations and real-time stream subscriptions. 
+
+b) StorageService handles image upload via Firebase Storage. 
+
+c) GeminiAPIService makes REST calls to generativelanguage.googleapis.com.
 
 4. Firebase Backend — Cloud Firestore with Security Rules enforcing authentication on all reads/writes. Real-time listeners (snapshots()) power live status updates without polling. Firebase Storage is used for item photos with a maximum size restriction of 5MB per image.
 State Management Justification — Provider was chosen over Riverpod and BLoC for simplicity within a 2-week scope, its direct integration with Flutter's widget tree, and team familiarity. No external state libraries beyond provider: ^6.0.0 are required.
