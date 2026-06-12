@@ -69,7 +69,7 @@ The 'CampusFind' mobile application follows a strict **Layered Architecture** pa
 We have selected the **Riverpod** package for state management. While the project approach covers Provider, Riverpod is the modern successor by the same author, addressing some of Provider's fundamental limitations (like global scope, type safety, and handling asynchronous data effortlessly).
 
 ### 8.2 Architectural Layers & Data Flow
-`
+```code
        [1. PRESENTATION LAYER (UI)]
           |--- Views (Screens)
           |--- Reusable Widgets (Components)
@@ -86,9 +86,11 @@ We have selected the **Riverpod** package for state management. While the projec
           |--- Repositories (AuthRepository, ItemRepository)
           |--- Services (FirebaseService, GeminiAIService)
           |--- Models (Data Transfer Objects)
+```
 
 ### 8.3 Feature-Based Folder Structure (Implementation Roadmap)
 
+```
 lib/
 ├── main.dart (App entry point with ProviderScope)
 ├── app_router.dart (go_router configuration)
@@ -119,6 +121,7 @@ lib/
     └── claims/
         ├── providers/     # claim_status_provider.dart
         └── views/         # claim_submission_screen.dart
+```
 
 ## 9. Data Model
 <img width="785" height="341" alt="image" src="https://github.com/user-attachments/assets/8d99b661-e21b-432d-aa81-aedfe9fc5ab9" />
