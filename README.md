@@ -2,7 +2,7 @@
 
 ---
 
- 1. Group Members & Roles
+ ## 1. Group Members & Roles
 
 1. | LUEBAESA MUHAMMADLUTFI | 2210835 | 
 2. | MUHAMMAD AMMAR RAZIQ BIN ABDUL RAZAK | 2311619 | 
@@ -11,7 +11,7 @@
 
 ---
 
-## 🏷️ 2. Project Title
+##  2. Project Title
 **CampusFind** – Shariah-Compliant Intelligent Lost & Found Mobile System for University Campuses.
 
 ---
