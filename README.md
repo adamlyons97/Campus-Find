@@ -87,8 +87,11 @@ State Management Justification — Provider was chosen over Riverpod and BLoC fo
 The Firestore collection-document model is shown in the diagram above. Key design decisions:
 
 users/ — Stores authenticated profile data. The role field differentiates between student, staff, and security, unlocking different UI flows and Firestore Security Rules.
+
 items/ — Central collection. The type field is either lost or found. status progresses through active → claimed → resolved. A GeoPoint field stores the tagged campus location for future map-view filtering.
+
 claims/ — Separate from items to maintain audit history. proofText stores the claimant's private description for manual or AI-assisted verification. Status progresses pending → approved → rejected.
+
 items/{itemId}/aiMatches/ (subcollection) — Written by the backend/Gemini call when a new item is submitted. Each document records a matchedItemId, a confidence score (0.0–1.0), and a status of notified or dismissed.
 
 Security Rules — All write operations require request.auth != null. Updates to claims status are restricted to documents where verifiedBy == request.auth.uid or where the user has a security or staff role.
