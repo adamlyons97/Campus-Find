@@ -54,7 +54,18 @@
 ## 8. Architecture/ Technical Design
 <img width="836" height="422" alt="Screenshot 2026-06-12 162813" src="https://github.com/user-attachments/assets/555748a9-20f2-462b-8367-d34ab654848b" />
 
+As shown in the layered diagram above, CampusFind follows a clean three-tier architecture:
+Flutter UI Layer — All screens are stateless or stateful widgets using Navigator 2.0 for named route navigation. Each screen subscribes to a Provider ChangeNotifier and rebuilds reactively on state changes.
+Business Logic (Provider) — Four core providers manage application state:
 
+ItemProvider — holds the items list stream from Firestore and triggers AI match checks on new submissions
+ClaimProvider — manages claim submission lifecycle and status polling
+AuthProvider — wraps Firebase Auth and enforces IIUM domain validation on login
+GeminiService — sends item description payloads to the Gemini API and returns match results
+
+Services Layer — Pure Dart classes with no Flutter dependencies. FirestoreService manages all CRUD operations and real-time stream subscriptions. StorageService handles image upload via Firebase Storage. GeminiAPIService makes REST calls to generativelanguage.googleapis.com.
+Firebase Backend — Cloud Firestore with Security Rules enforcing authentication on all reads/writes. Real-time listeners (snapshots()) power live status updates without polling. Firebase Storage is used for item photos with a maximum size restriction of 5MB per image.
+State Management Justification — Provider was chosen over Riverpod and BLoC for simplicity within a 2-week scope, its direct integration with Flutter's widget tree, and team familiarity. No external state libraries beyond provider: ^6.0.0 are required.
 
 
 
