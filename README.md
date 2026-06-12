@@ -226,7 +226,9 @@ This collection governs the verification process of reuniting people with their 
 }
 ```
 
-## 10. Flowchart/ Sequence Diagram
+## 10. Flowchart
+
+
 
 
 
