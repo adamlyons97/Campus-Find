@@ -58,7 +58,7 @@ Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states
 
 ---
 
-## 8. Architecture / Technical Design
+## 8. Architecture 
 The 'CampusFind' mobile application follows a strict **Layered Architecture** pattern, utilizing a clean separation of concerns. This approach ensures modularity, testability, and efficient real-time state updates.
 
 ### 8.1 Chosen State Management: **Riverpod**
