@@ -3,7 +3,6 @@
 ---
 
  ## 1. Group Members & Roles
-
 1. | LUEBAESA MUHAMMADLUTFI | 2210835 | 
 2. | MUHAMMAD AMMAR RAZIQ BIN ABDUL RAZAK | 2311619 | 
 3. | CHE MUHAMMAD HAKIMI BIN CHE ARSHAD | 2311665 |
@@ -38,7 +37,6 @@
 ---
 
 ## 6. Features & Functionalities
-
 1. **Authentication Hub:**
 Secure login restricted to university domains with automatic field validation.
 2. **Report Lost/Found Items:**
@@ -53,7 +51,6 @@ Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states
 ---
 
 ## 7. UI Mockup
-
 <img width="350" height="699" alt="image" src="https://github.com/user-attachments/assets/b128d1e7-3bb0-4640-be94-fc90b2190bc0" />
 <img width="353" height="702" alt="image" src="https://github.com/user-attachments/assets/587511f4-122d-4f65-8728-d1553f16023f" />
 <img width="346" height="699" alt="image" src="https://github.com/user-attachments/assets/2355f586-1daa-4ce6-a66b-e38e14d6e6ff" />
@@ -62,7 +59,6 @@ Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states
 ---
 
 ## 🏗️ 8. Architecture / Technical Design
-
 The 'CampusFind' mobile application follows a strict **Layered Architecture** pattern, utilizing a clean separation of concerns. This approach ensures modularity, testability, and efficient real-time state updates.
 
 ### 8.1 Chosen State Management: **Riverpod**
@@ -227,13 +223,7 @@ This collection governs the verification process of reuniting people with their 
 ```
 
 ## 10. Flowchart
-
-
-
-
-
-
-
+![image alt](https://github.com/adamlyons97/Campus-Find/blob/bbe8a18ccb678657bdb69b5a0db740cca9907ece/CampusFind.jpg)
 
 ## 📚 11. References
 *   Flutter Official Documentation: https://docs.flutter.dev
