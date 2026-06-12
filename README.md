@@ -59,38 +59,66 @@ Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states
 <img width="346" height="699" alt="image" src="https://github.com/user-attachments/assets/2355f586-1daa-4ce6-a66b-e38e14d6e6ff" />
 <img width="357" height="701" alt="image" src="https://github.com/user-attachments/assets/66515f54-ce29-412c-bf57-fbb1fdb52a99" />
 
+---
 
+## 🏗️ 8. Architecture / Technical Design
 
+The 'CampusFind' mobile application follows a strict **Layered Architecture** pattern, utilizing a clean separation of concerns. This approach ensures modularity, testability, and efficient real-time state updates.
 
-## 8. Architecture/ Technical Design
-<img width="836" height="422" alt="Screenshot 2026-06-12 162813" src="https://github.com/user-attachments/assets/555748a9-20f2-462b-8367-d34ab654848b" />
+### 8.1 Chosen State Management: **Riverpod**
+We have selected the **Riverpod** package for state management. While the project approach covers Provider, Riverpod is the modern successor by the same author, addressing some of Provider's fundamental limitations (like global scope, type safety, and handling asynchronous data effortlessly).
 
-As shown in the layered diagram above, CampusFind follows a clean three-tier architecture:
-1. Flutter UI Layer — All screens are stateless or stateful widgets using Navigator 2.0 for named route navigation. Each screen subscribes to a Provider ChangeNotifier and rebuilds reactively on state changes.
+### 8.2 Architectural Layers & Data Flow
+`
+       [1. PRESENTATION LAYER (UI)]
+          |--- Views (Screens)
+          |--- Reusable Widgets (Components)
+          ^
+          | (Consumes State, Dispatches Intent)
+          v
+       [2. STATE/NOTIFIER LAYER (BUSINESS LOGIC)]
+          |--- StateNotifiers (View Models)
+          |--- Providers (AsyncNotifierProvider, StateProvider)
+          ^
+          | (Calls Services, Updates State)
+          v
+       [3. DATA LAYER (INFRASTRUCTURE)]
+          |--- Repositories (AuthRepository, ItemRepository)
+          |--- Services (FirebaseService, GeminiAIService)
+          |--- Models (Data Transfer Objects)
 
-2. Business Logic (Provider) — Four core providers manage application state:
+### 8.3 Feature-Based Folder Structure (Implementation Roadmap)
 
-  a) ItemProvider — holds the items list stream from Firestore and triggers AI match checks on new submissions
-  
-  b) ClaimProvider — manages claim submission lifecycle and status polling
-  
-  c) AuthProvider — wraps Firebase Auth and enforces IIUM domain validation on login
-  
-  d) GeminiService — sends item description payloads to the Gemini API and returns match results
-
-3. Services Layer — Pure Dart classes with no Flutter dependencies. 
-
-a) FirestoreService manages all CRUD operations and real-time stream subscriptions. 
-
-b) StorageService handles image upload via Firebase Storage. 
-
-c) GeminiAPIService makes REST calls to generativelanguage.googleapis.com.
-
-4. Firebase Backend — Cloud Firestore with Security Rules enforcing authentication on all reads/writes. Real-time listeners (snapshots()) power live status updates without polling. Firebase Storage is used for item photos with a maximum size restriction of 5MB per image.
-State Management Justification — Provider was chosen over Riverpod and BLoC for simplicity within a 2-week scope, its direct integration with Flutter's widget tree, and team familiarity. No external state libraries beyond provider: ^6.0.0 are required.
-
-
-
+lib/
+├── main.dart (App entry point with ProviderScope)
+├── app_router.dart (go_router configuration)
+│
+├── core/                  # Shared utilities
+│   ├── theme.dart         # Shariah-compliant styles
+│   └── constants/         # Asset paths, Shariah strings
+│
+├── data/                  # Core Models and Services
+│   ├── models/            # ItemModel.dart, UserModel.dart
+│   ├── repositories/      # auth_repository.dart, item_repository.dart
+│   └── services/          # gemini_ai_service.dart
+│
+└── features/              # Feature-specific modules
+    ├── auth/
+    │   ├── providers/     # auth_provider.dart
+    │   ├── views/         # login_screen.dart
+    │   └── widgets/       # auth_validator_field.dart
+    ├── home/
+    │   ├── providers/     # item_list_provider.dart
+    │   └── views/         # home_dashboard.dart
+    ├── create_post/
+    │   ├── views/         # create_item_form.dart
+    │   └── widgets/       # image_picker_widget.dart
+    ├── search/
+    │   ├── providers/     # gemini_search_provider.dart
+    │   └── views/         # ai_search_screen.dart
+    └── claims/
+        ├── providers/     # claim_status_provider.dart
+        └── views/         # claim_submission_screen.dart
 
 ## 9. Data Model
 <img width="785" height="341" alt="image" src="https://github.com/user-attachments/assets/8d99b661-e21b-432d-aa81-aedfe9fc5ab9" />
