@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/campus_store.dart';
-import '../models/campus_item.dart';
-import '../models/item_claim.dart';
-import '../models/profile.dart';
+import '../../../data/models/campus_item.dart';
+import '../../../data/models/item_claim.dart';
+import '../../../data/models/profile.dart';
+import '../../../data/repositories/campus_store.dart';
 
 enum ItemFilter { all, lost, found, claimed }
 

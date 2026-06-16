@@ -1,7 +1,7 @@
 import '../models/campus_item.dart';
 import '../models/item_claim.dart';
 import '../models/profile.dart';
-import 'campus_store.dart';
+import '../repositories/campus_store.dart';
 
 class MemoryCampusStore implements CampusStore {
   MemoryCampusStore.seeded()

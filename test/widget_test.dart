@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:campusfind/data/memory_campus_store.dart';
-import 'package:campusfind/main.dart';
+import 'package:campusfind/app_router.dart';
+import 'package:campusfind/data/services/memory_campus_store.dart';
 
 void main() {
   testWidgets('CampusFind signs in and opens the seeded dashboard', (

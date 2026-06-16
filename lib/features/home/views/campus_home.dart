@@ -3,10 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../models/campus_item.dart';
-import '../models/item_claim.dart';
-import '../models/profile.dart';
-import '../state/campus_controller.dart';
+import '../../../data/models/campus_item.dart';
+import '../../../data/models/item_claim.dart';
+import '../../../data/models/profile.dart';
+import '../providers/campus_controller.dart';
 
 const _primaryBlue = Color(0xFF2563EB);
 const _softBlue = Color(0xFFEFF6FF);
