@@ -52,10 +52,8 @@ class HomeDashboard extends ConsumerWidget {
         // The button to report a new item
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            // TODO: Route to Create Post Screen
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Create Post Screen coming soon!')),
-            );
+            // UPDATED: Triggers smooth path transitions
+            context.push('/create-post');
           },
           backgroundColor: Colors.teal,
           foregroundColor: Colors.white,
