@@ -65,7 +65,7 @@ The 'CampusFind' mobile application follows a strict **Layered Architecture** pa
 We have selected the **Riverpod** package for state management. While the project approach covers Provider, Riverpod is the modern successor by the same author, addressing some of Provider's fundamental limitations (like global scope, type safety, and handling asynchronous data effortlessly).
 
 ### 8.2 Architectural Layers & Data Flow
-```code
+```
        [1. PRESENTATION LAYER (UI)]
           |--- Views (Screens)
           |--- Reusable Widgets (Components)
@@ -185,8 +185,8 @@ Lost and Found items are merged into a single collection to streamline universal
     "specificDetails": "String (e.g., 'Third table from entrance')"
   },
   "reportedAt": "Timestamp",
-  "reporterId": "String (Ref to users.uid)",
-  "reporterName": "String (Denormalized for efficient display)",
+  "reporterBy": "String (Ref to users.uid)",
+  "reporterByName": "String (Denormalized for efficient display)",
   "isSoftDeleted": "Boolean (For data integrity)",
   "finderClaimRequestNotes": "String (If type is found, finder specifies handoff details)"
 }
@@ -213,7 +213,6 @@ This collection governs the verification process of reuniting people with their 
 {
   "itemId": "String (Ref to items.itemId)",
   "claimantId": "String (Ref to users.uid)",
-  "reporterId": "String (Ref to users.uid - owner of the Found post)",
   "proofOfOwnership": "String (Claimant's natural language description matching the item)",
   "claimedAt": "Timestamp",
   "updatedAt": "Timestamp",
@@ -229,5 +228,5 @@ This collection governs the verification process of reuniting people with their 
 *   Flutter Official Documentation: https://docs.flutter.dev
 *   Firebase Core & Firestore Documentation: https://firebase.google.com/docs
 *   Google AI Dart SDK (Gemini): https://pub.dev/packages/google_generative_ai
-*   Provider State Management: https://pub.dev/packages/provider
+*   Riverpod State Management: https://pub.dev/packages/flutter_riverpod
 *   Go_Router Navigation Asset: https://pub.dev/packages/go_router
