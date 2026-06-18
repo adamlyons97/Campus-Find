@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../home/providers/item_provider.dart';
 import '../providers/match_provider.dart';
@@ -60,26 +61,33 @@ class MyPostsScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  // THE NEW LIVE STATUS BADGE
-                                  // THE NEW LIVE STATUS BADGE
+                                  // THE 3-TIER STATUS BADGE
                                   Builder(
                                     builder: (context) {
-                                      // THE FIX: Switch this line from false to the live data evaluation
-                                      final isResolved = item.status == 'resolved'; 
+                                      Color badgeColor;
+                                      Color textColor;
+                                      String badgeText;
+
+                                      if (item.status == 'resolved') {
+                                        badgeColor = Colors.grey.shade300;
+                                        textColor = Colors.grey.shade700;
+                                        badgeText = 'RESOLVED';
+                                      } else if (item.status == 'claimed') {
+                                        badgeColor = Colors.orange.shade100;
+                                        textColor = Colors.deepOrange;
+                                        badgeText = 'CLAIMED';
+                                      } else {
+                                        badgeColor = Colors.blue.shade100;
+                                        textColor = Colors.blue;
+                                        badgeText = 'ACTIVE';
+                                      }
                                       
                                       return Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: isResolved ? Colors.grey.shade300 : Colors.blue.shade100, 
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
+                                        decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(12)),
                                         child: Text(
-                                          isResolved ? 'RESOLVED' : 'ACTIVE',
-                                          style: TextStyle(
-                                            fontSize: 10, 
-                                            fontWeight: FontWeight.bold, 
-                                            color: isResolved ? Colors.grey.shade700 : Colors.blue
-                                          ),
+                                          badgeText,
+                                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor),
                                         ),
                                       );
                                     }
@@ -96,66 +104,83 @@ class MyPostsScreen extends ConsumerWidget {
                       ),
                     ),
 
-                    // The AI Match Engine Listener
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final matchState = ref.watch(itemMatchesStreamProvider(item.itemId));
+                    // DYNAMIC BOTTOM SECTION BASED ON STATUS
+                    if (item.status == 'resolved') ...[
+                      // If resolved, show a simple closed case message
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12))),
+                        child: const Center(child: Text('Case Closed. Item returned successfully.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))),
+                      ),
+                    ] else if (item.status == 'claimed') ...[
+                      // If claimed, show the final physical handover button!
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12))),
+                        child: Column(
+                          children: [
+                            const Text('Meeting in progress. Click below once the item is physically handed over.', textAlign: TextAlign.center, style: TextStyle(color: Colors.deepOrange)),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                // Final status update to Resolved!
+                                await FirebaseFirestore.instance.collection('items').doc(item.itemId).set({'status': 'resolved'}, SetOptions(merge: true));
+                              },
+                              icon: const Icon(Icons.handshake),
+                              label: const Text('CONFIRM HANDOVER (RESOLVE)', style: TextStyle(fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // If active, show the AI Match Engine Listener
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final matchState = ref.watch(itemMatchesStreamProvider(item.itemId));
 
-                        return matchState.when(
-                          loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: LinearProgressIndicator())),
-                          error: (err, stack) => Padding(padding: const EdgeInsets.all(16), child: Text(err.toString(), style: const TextStyle(color: Colors.red))),
-                          data: (matches) {
-                            if (matches.isEmpty) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16),
-                                child: Text('⏳ AI Scanning active. No matches yet.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+                          return matchState.when(
+                            loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: LinearProgressIndicator())),
+                            error: (err, stack) => Padding(padding: const EdgeInsets.all(16), child: Text(err.toString(), style: const TextStyle(color: Colors.red))),
+                            data: (matches) {
+                              if (matches.isEmpty) {
+                                return const Padding(
+                                  padding: EdgeInsets.all(16),
+                                  child: Text('⏳ AI Scanning active. No matches yet.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+                                );
+                              }
+
+                              return Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(color: Colors.amber.shade50, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12))),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.auto_awesome, color: Colors.amber),
+                                        const SizedBox(width: 8),
+                                        const Text('Gemini AI Match Detected!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        final match = matches.first;
+                                        final targetItemId = match.newItemId == item.itemId ? match.matchedItemId : match.newItemId;
+                                        context.push('/match-details?matchId=${match.matchId}&matchedItemId=$targetItemId');
+                                      },
+                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
+                                      child: const Text('REVIEW MATCH'),
+                                    )
+                                  ],
+                                ),
                               );
-                            }
-
-                            // AI MATCH FOUND UI
-                            return Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.shade50,
-                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.auto_awesome, color: Colors.amber),
-                                      const SizedBox(width: 8),
-                                      const Text('Gemini AI Match Detected!', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.amber)),
-                                      const Spacer(),
-                                      Text('${(matches.first.confidenceScore * 100).toInt()}% Match'),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 12),
-                                  const Text('A highly probable match has been found in the system. Review it now to coordinate the return.'),
-                                  const SizedBox(height: 12),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final match = matches.first;
-                                      
-                                      // SMART ROUTING LOGIC
-                                      final targetItemId = match.newItemId == item.itemId 
-                                          ? match.matchedItemId 
-                                          : match.newItemId;
-
-                                      // Push to the new screen, passing the IDs in the URL
-                                      context.push('/match-details?matchId=${match.matchId}&matchedItemId=$targetItemId');
-                                    },
-                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
-                                    child: const Text('REVIEW MATCH'),
-                                  )
-                                ],
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+                            },
+                          );
+                        },
+                      ),
+                    ]
                   ],
                 ),
               );

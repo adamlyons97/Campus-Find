@@ -118,14 +118,14 @@ class MatchDetailsScreen extends ConsumerWidget {
                       final firstItemId = matchData['newItemId'];
                       final secondItemId = matchData['matchedItemId'];
 
-                      // 3. STATUS MANAGEMENT: Mark BOTH items as resolved in Firestore!
-                      await db.collection('items').doc(firstItemId).set({'status': 'resolved'}, SetOptions(merge: true));
-                      await db.collection('items').doc(secondItemId).set({'status': 'resolved'}, SetOptions(merge: true));
+                      // 3. STATUS MANAGEMENT: Mark BOTH items as CLAIMED in Firestore!
+                      await db.collection('items').doc(firstItemId).set({'status': 'claimed'}, SetOptions(merge: true));
+                      await db.collection('items').doc(secondItemId).set({'status': 'claimed'}, SetOptions(merge: true));
                     }
 
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Match Accepted! Both items marked as resolved.'), backgroundColor: Colors.green),
+                        const SnackBar(content: Text('Match Accepted! Item is now CLAIMED. Please arrange a meet-up.'), backgroundColor: Colors.orange),
                       );
                       context.pop(); // Go back to dashboard
                     }
