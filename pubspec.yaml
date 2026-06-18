@@ -39,11 +39,11 @@ dependencies:
   firebase_core: ^3.1.1
   firebase_auth: ^5.1.1
   cloud_firestore: ^5.0.1
-  firebase_storage: ^12.0.1
+  firebase_storage: ^12.4.10
 
   # Core Feature Enhancements & Advanced Tooling
   google_generative_ai: ^0.4.1
-  image_picker: ^1.1.2
+  image_picker: ^1.2.2
   cupertino_icons: ^1.0.8
 
   # The "flutter_lints" package below contains a set of recommended lints to

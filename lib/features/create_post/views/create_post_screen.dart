@@ -1,6 +1,9 @@
+import 'dart:io'; 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart'; 
+
 import '../providers/create_post_provider.dart';
 
 class CreatePostScreen extends ConsumerStatefulWidget {
@@ -17,11 +20,12 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _locationNameController = TextEditingController();
   final _locationDetailsController = TextEditingController();
   
-  String _itemType = 'lost'; // Default segment value
+  String _itemType = 'lost'; 
   String? _selectedCategoryId;
   String? _selectedCategoryName;
 
-  // Static campus-centric classifications mapping directly to your system requirements
+  File? _pickedImage; // Keeps the local image state for the UI
+
   final List<Map<String, String>> _categories = [
     {'id': 'cat_electronics', 'name': 'Electronics & Gadgets'},
     {'id': 'cat_docs', 'name': 'Documents & Cards (Matric/IC)'},
@@ -40,9 +44,42 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     super.dispose();
   }
 
+  // The local image picker works perfectly without the cloud
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final result = await picker.pickImage(source: source);
+      if (result != null) {
+        setState(() {
+          _pickedImage = File(result.path);
+        });
+      }
+    } catch (e) {
+      if(mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(createPostControllerProvider.notifier).submitItem(
+      final submissionNotifier = ref.read(createPostControllerProvider.notifier);
+
+      // MOCK FEATURE LOGIC: If they picked an image, acknowledge it but don't upload it.
+      if (_pickedImage != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image staged locally. (Cloud Sync disabled for demo)'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.blueGrey,
+          ),
+        );
+      }
+
+      // Publish the text data to Firestore exactly as before
+      await submissionNotifier.submitItem(
             title: _titleController.text.trim(),
             description: _descriptionController.text.trim(),
             type: _itemType,
@@ -50,13 +87,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             categoryName: _selectedCategoryName!,
             locationName: _locationNameController.text.trim(),
             locationDetails: _locationDetailsController.text.trim(),
+            imageUrl: null, // Intentionally null so Firestore is happy
           );
 
       if (ref.read(createPostControllerProvider).hasError == false && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post published successfully!')),
+          const SnackBar(content: Text('Post published successfully!'), backgroundColor: Colors.green),
         );
-        context.pop(); // Returns back to dashboard feed smoothly
+        context.pop(); 
       }
     }
   }
@@ -79,7 +117,6 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Segmented Toggle for Lost vs Found
                 SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(value: 'lost', label: Text('I Lost Something'), icon: Icon(Icons.search_off)),
@@ -125,12 +162,89 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   },
                   validator: (value) => value == null ? 'Please select a category' : null,
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
+
+                // THE MOCK UI - Fully interactive but safely disconnected from the cloud
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('Item Photo (Optional)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const SizedBox(height: 16),
+                      
+                      if (_pickedImage != null)
+                        Stack(
+                          alignment: Alignment.topRight,
+                          children: [
+                            Container(
+                              height: 180,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                image: DecorationImage(image: FileImage(_pickedImage!), fit: BoxFit.cover),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.cancel, color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  _pickedImage = null;
+                                });
+                              },
+                              style: IconButton.styleFrom(backgroundColor: Colors.red.withValues(alpha: 0.7)),
+                            ),
+                          ],
+                        )
+                      else
+                        Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 64, color: Colors.grey.shade600),
+                              const SizedBox(height: 12),
+                              Text('No image selected', style: TextStyle(color: Colors.grey.shade700, fontStyle: FontStyle.italic)),
+                            ],
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () => _pickImage(ImageSource.camera),
+                            icon: const Icon(Icons.camera_alt),
+                            label: const Text('Camera'),
+                            style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => _pickImage(ImageSource.gallery),
+                            icon: const Icon(Icons.photo_library),
+                            label: const Text('Gallery'),
+                            style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
 
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Detailed Description', border: OutlineInputBorder(), hintText: 'Provide unique identifiers (stickers, keychains, scratches) to help verification'),
+                  decoration: const InputDecoration(labelText: 'Detailed Description', border: OutlineInputBorder(), hintText: 'Provide unique identifiers to help verification'),
                   validator: (value) => value!.isEmpty ? 'Please add a description' : null,
                 ),
                 const SizedBox(height: 24),
@@ -140,14 +254,14 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
                 TextFormField(
                   controller: _locationNameController,
-                  decoration: const InputDecoration(labelText: 'General Location', border: OutlineInputBorder(), hintText: 'e.g., Kuliyyah of ICT, Mahallah Ali Lounge'),
+                  decoration: const InputDecoration(labelText: 'General Location', border: OutlineInputBorder(), hintText: 'e.g., Kuliyyah of ICT'),
                   validator: (value) => value!.isEmpty ? 'General location context required' : null,
                 ),
                 const SizedBox(height: 16),
 
                 TextFormField(
                   controller: _locationDetailsController,
-                  decoration: const InputDecoration(labelText: 'Specific Details / Spot', border: OutlineInputBorder(), hintText: 'e.g., On the corner table near the vending machine'),
+                  decoration: const InputDecoration(labelText: 'Specific Details / Spot', border: OutlineInputBorder(), hintText: 'e.g., On the corner table'),
                   validator: (value) => value!.isEmpty ? 'Please provide spot detail context' : null,
                 ),
                 const SizedBox(height: 32),
