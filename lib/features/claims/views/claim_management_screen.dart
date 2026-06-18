@@ -16,7 +16,7 @@ class ClaimManagementScreen extends ConsumerWidget {
     final pending = ref.watch(pendingClaimsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Verify Claims')),
+      appBar: AppBar(title: const Text('Secure Claim Verification')),
       body: pending.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text(e.toString())),
@@ -88,7 +88,7 @@ class _ClaimReviewCard extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Stated proof of ownership:',
+                  const Text('Private details provided by claimant:',
                       style:
                           TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
