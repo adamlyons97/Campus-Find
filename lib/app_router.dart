@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/auth/views/login_screen.dart';
 import 'features/auth/views/sign_up_screen.dart';
 import 'features/home/views/home_dashboard.dart';
+import 'features/home/views/item_detail_screen.dart';
 import 'features/create_post/views/create_post_screen.dart';
 import 'features/claims/views/my_posts_screen.dart';
 import 'features/claims/views/match_details_screen.dart';
@@ -71,6 +72,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/profile',
         name: 'profile',
         builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/item-detail/:id',
+        name: 'item-detail',
+        builder: (context, state) {
+          final itemId = state.pathParameters['id']!;
+          return ItemDetailScreen(itemId: itemId);
+        },
       ),
     ],
   );

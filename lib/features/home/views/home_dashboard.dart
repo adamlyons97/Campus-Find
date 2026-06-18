@@ -60,7 +60,7 @@ class HomeDashboard extends ConsumerWidget {
         // The button to report a new item
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () {
-            // UPDATED: Triggers smooth path transitions
+            // Triggers smooth path transitions
             context.push('/create-post');
           },
           backgroundColor: Colors.teal,
@@ -108,7 +108,8 @@ class HomeDashboard extends ConsumerWidget {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return _buildItemCard(item);
+            // We pass 'context' here so the card knows how to navigate!
+            return _buildItemCard(context, item);
           },
         );
       },
@@ -116,75 +117,84 @@ class HomeDashboard extends ConsumerWidget {
   }
 
   /// The visual design for a single Lost/Found item card
-  Widget _buildItemCard(ItemModel item) {
+  // UPDATED: Added BuildContext as a parameter
+  Widget _buildItemCard(BuildContext context, ItemModel item) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+      // We wrap the padding in an InkWell to make the whole card tapped!
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12), // Keeps the ripple inside the rounded corners
+        onTap: () {
+          // Push to the new Detail Screen with this specific item's ID
+          context.push('/item-detail/${item.itemId}');
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      item.title,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      item.categoryName,
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                    ),
                   ),
-                  child: Text(
-                    item.categoryName,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade800),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: Colors.grey.shade700),
+              ),
+              const Divider(height: 24),
+              Row(
+                children: [
+                  const Icon(Icons.location_on, size: 16, color: Colors.teal),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      item.locationSeen.name,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              item.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey.shade700),
-            ),
-            const Divider(height: 24),
-            Row(
-              children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.teal),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    item.locationSeen.name,
-                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                  const SizedBox(width: 4),
+                  Text(
+                    // Formats the raw timestamp into a readable date (e.g., Oct 12, 2025)
+                    DateFormat.yMMMd().format(item.reportedAt),
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.access_time, size: 16, color: Colors.grey),
-                const SizedBox(width: 4),
-                Text(
-                  // Formats the raw timestamp into a readable date (e.g., Oct 12, 2025)
-                  DateFormat.yMMMd().format(item.reportedAt),
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
