@@ -31,12 +31,18 @@ class ProfileScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator(color: Colors.teal)),
         error: (err, stack) => Center(child: Text('Error loading profile: $err')),
         data: (userData) {
-          // Fallback logic in case they created an account before we added the database sync
           final email = user?.email ?? 'No email available';
-          final authName = user?.displayName ?? '';
           
-          final fullName = userData?['fullName'] ?? (authName.isNotEmpty ? authName : 'Ahmad Adam Danial Bin Ab Rahman');
+          // ROBUST NAME FIX: Prioritize Firestore, fallback safely, and NEVER show an email here.
+          String fullName = userData?['fullName'] ?? user?.displayName ?? '';
+          if (fullName.isEmpty || fullName.contains('@')) {
+            fullName = 'Ahmad Adam Danial Bin Ab Rahman'; // Safe fallback
+          }
+          
           final matricNumber = userData?['matricNumber'] ?? '2319525';
+          
+          // NEW: Fetch the synchronized phone number
+          final phoneNumber = userData?['phoneNumber'] ?? 'No phone number provided';
           
           final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
 
@@ -76,6 +82,15 @@ class ProfileScreen extends ConsumerWidget {
                         subtitle: Text(matricNumber, style: const TextStyle(fontSize: 16, color: Colors.black87)),
                       ),
                       const Divider(height: 1),
+                      
+                      // NEW: Mobile Phone UI Row
+                      ListTile(
+                        leading: const Icon(Icons.phone_android, color: Colors.teal),
+                        title: const Text('Mobile Phone', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        subtitle: Text(phoneNumber, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                      ),
+                      const Divider(height: 1),
+                      
                       ListTile(
                         leading: const Icon(Icons.email, color: Colors.teal),
                         title: const Text('University Email', style: TextStyle(color: Colors.grey, fontSize: 12)),
