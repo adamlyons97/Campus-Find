@@ -3,18 +3,81 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../auth/providers/auth_provider.dart';
 
-class ProfileScreen extends ConsumerWidget {
+class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // Grab the current user directly from Firebase
-    final user = FirebaseAuth.instance.currentUser;
-    
-    // Set up display variables with safe fallbacks
+  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Function to show a popup dialog and update Firebase directly
+  Future<void> _editNameDialog() async {
+    final currentName = _auth.currentUser?.displayName ?? '';
+    final controller = TextEditingController(text: currentName);
+
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Update Student Name'),
+          content: TextField(
+            controller: controller,
+            textCapitalization: TextCapitalization.words,
+            decoration: const InputDecoration(
+              labelText: 'Full Name',
+              hintText: 'e.g., Ahmad Adam Danial', // A helpful hint for the user
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+              child: const Text('SAVE'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // If the user typed a new name, save it to the Google Cloud!
+    if (newName != null && newName.isNotEmpty && newName != currentName) {
+      await _auth.currentUser?.updateDisplayName(newName);
+      await _auth.currentUser?.reload(); // Forces Firebase to fetch the newest data
+      setState(() {}); // Refreshes the UI instantly
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully!'), backgroundColor: Colors.teal),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = _auth.currentUser;
     final email = user?.email ?? 'No email available';
-    final displayName = user?.displayName ?? email.split('@')[0];
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+
+    // Smarter logic to ensure we ALWAYS have a name to display
+    String displayName = '';
+    if (user?.displayName != null && user!.displayName!.trim().isNotEmpty) {
+      displayName = user.displayName!;
+    } else {
+      displayName = 'Tap to set your name'; // Better fallback text
+    }
+
+    // Extract the first letter for the Smart Avatar (defaults to 'U' for User if empty)
+    final initial = (user?.displayName != null && user!.displayName!.trim().isNotEmpty) 
+        ? user.displayName![0].toUpperCase() 
+        : 'U';
 
     return Scaffold(
       appBar: AppBar(
@@ -25,20 +88,31 @@ class ProfileScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(24.0),
         children: [
-          // Profile Avatar
+          // The Smart Avatar
           Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.teal.shade100,
-              child: Text(
-                initial,
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal),
-              ),
+            child: Stack(
+              alignment: Alignment.bottomRight,
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.teal.shade100,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal),
+                  ),
+                ),
+                // A tiny camera icon to hint that photo uploads might come later!
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: const BoxDecoration(color: Colors.teal, shape: BoxShape.circle),
+                  child: const Icon(Icons.camera_alt, color: Colors.white, size: 20),
+                )
+              ],
             ),
           ),
           const SizedBox(height: 32),
           
-          // User Details Card
+          // User Details Card with Edit Button
           Card(
             elevation: 2,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -49,7 +123,18 @@ class ProfileScreen extends ConsumerWidget {
                   ListTile(
                     leading: const Icon(Icons.person, color: Colors.teal),
                     title: const Text('Student Name', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                    subtitle: Text(displayName, style: const TextStyle(fontSize: 18, color: Colors.black87)),
+                    subtitle: Text(
+                      displayName, 
+                      style: TextStyle(
+                        fontSize: 18, 
+                        color: displayName == 'Tap to set your name' ? Colors.grey : Colors.black87,
+                        fontStyle: displayName == 'Tap to set your name' ? FontStyle.italic : FontStyle.normal,
+                      )
+                    ),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.teal),
+                      onPressed: _editNameDialog, // Triggers the popup!
+                    ),
                   ),
                   const Divider(height: 1),
                   ListTile(
@@ -63,7 +148,7 @@ class ProfileScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 40),
 
-          // The New Logout Button Location
+          // Logout Button
           ElevatedButton.icon(
             onPressed: () {
               ref.read(authControllerProvider.notifier).logout();
