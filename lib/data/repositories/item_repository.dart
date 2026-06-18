@@ -70,4 +70,21 @@ class ItemRepository {
       }).toList();
     });
   }
+  /// Fetches a one-time list of active items by type (used by the AI matching service)
+  Future<List<ItemModel>> getActiveItemsByTypeOnce(String type) async {
+    try {
+      final snapshot = await _itemsCollection
+          .where('type', isEqualTo: type)
+          .where('status', isEqualTo: 'active')
+          .where('isSoftDeleted', isEqualTo: false)
+          .get();
+
+      return snapshot.docs.map((doc) {
+        return ItemModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+      }).toList();
+    } catch (e) {
+      throw Exception('Failed to fetch items for AI comparison: $e');
+    }
+  }
 }
+
