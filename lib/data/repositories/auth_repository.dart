@@ -33,33 +33,27 @@ class AuthRepository {
   }
 
   /// Registers a new user and creates their Firestore profile
-  Future<UserModel?> registerWithEmailAndPassword(
-      String email, String password, String name, String matricNo) async {
+  // 1. Add String phoneNumber to the function parameters here:
+  Future<UserModel?> registerWithEmailAndPassword(String email, String password, String name, String matricNo, String phoneNumber) async {
     try {
-      if (!_isValidIIUMEmail(email)) {
-        throw Exception('Registration restricted to @live.iium.edu.my domains.');
-      }
-
-      UserCredential credential = await _auth.createUserWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      // Create the structured UserModel object
+      // 2. Add phoneNumber to the UserModel creation here:
       UserModel newUser = UserModel(
-        uid: credential.user!.uid,
+        uid: userCredential.user!.uid,
         name: name,
         email: email,
-        role: 'student', // Default role for new sign-ups
+        role: 'student',
         joinedAt: DateTime.now(),
+        phoneNumber: phoneNumber, // <--- ADD THIS LINE
       );
-
-      // Save the user profile to Cloud Firestore
-      await _firestore.collection('users').doc(newUser.uid).set(newUser.toMap());
 
       return newUser;
     } catch (e) {
-      throw Exception(e.toString());
+      rethrow;
     }
   }
 

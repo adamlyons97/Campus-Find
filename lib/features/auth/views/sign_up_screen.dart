@@ -14,6 +14,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _nameController = TextEditingController();
   final _matricNoController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController(); // NEW: Phone Controller
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -22,6 +23,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     _nameController.dispose();
     _matricNoController.dispose();
     _emailController.dispose();
+    _phoneController.dispose(); // NEW: Dispose it to prevent memory leaks
     _passwordController.dispose();
     super.dispose();
   }
@@ -29,11 +31,13 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   Future<void> _handleSignUp() async {
     if (_formKey.currentState!.validate()) {
       // Trigger the Riverpod Auth Controller's register method
+      // Note: We are passing the phone number here now!
       await ref.read(authControllerProvider.notifier).register(
             _emailController.text.trim(),
             _passwordController.text.trim(),
             _nameController.text.trim(),
             _matricNoController.text.trim(),
+            _phoneController.text.trim(), // NEW: Passing phone data
           );
       
       // If successful, navigate to the home dashboard
@@ -103,6 +107,20 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       prefixIcon: Icon(Icons.badge),
                     ),
                     validator: (value) => value!.isEmpty ? 'Matric Number is required' : null,
+                  ),
+                  const SizedBox(height: 16),
+
+                  // NEW: Phone Number Input Field
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone, // Opens number pad on mobile!
+                    decoration: const InputDecoration(
+                      labelText: 'Mobile Phone Number',
+                      hintText: 'e.g., 0123456789',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.phone_android),
+                    ),
+                    validator: (value) => value!.isEmpty ? 'Phone number is required' : null,
                   ),
                   const SizedBox(height: 16),
 

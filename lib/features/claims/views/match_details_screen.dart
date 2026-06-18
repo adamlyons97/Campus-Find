@@ -2,14 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart'; // NEW: For opening WhatsApp & Phone calls
 import '../../../data/models/item_model.dart';
 import '../providers/match_provider.dart';
 
-// A quick Riverpod provider to fetch the specific matched item once
+// Fetches the specific matched item once
 final singleItemFutureProvider = FutureProvider.family<ItemModel?, String>((ref, itemId) async {
   final doc = await FirebaseFirestore.instance.collection('items').doc(itemId).get();
   if (!doc.exists) return null;
   return ItemModel.fromMap(doc.data()!, doc.id);
+});
+
+// NEW: Fetches the Reporter's full profile from the 'users' collection to get their phone number!
+final reporterProfileProvider = FutureProvider.family<Map<String, dynamic>?, String>((ref, userId) async {
+  final doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  return doc.data();
 });
 
 class MatchDetailsScreen extends ConsumerWidget {
@@ -24,7 +31,6 @@ class MatchDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Watch the future provider to load the item
     final itemState = ref.watch(singleItemFutureProvider(matchedItemId));
 
     return Scaffold(
@@ -83,8 +89,10 @@ class MatchDetailsScreen extends ConsumerWidget {
                         Text(item.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Text(item.description, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                        
                         const Divider(height: 32),
                         
+                        // Location Section
                         const Row(
                           children: [
                             Icon(Icons.location_on, color: Colors.teal),
@@ -94,14 +102,131 @@ class MatchDetailsScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(item.locationSeen.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        Text(item.locationSeen.specificDetails, style: Colors.grey.shade700 == null ? null : TextStyle(color: Colors.grey.shade700)),
+                        Text(item.locationSeen.specificDetails, style: TextStyle(color: Colors.grey.shade700)),
+
+                        const Divider(height: 32),
+
+                        // LIVE SECTION: Reporter Contact Details from Firestore
+                        const Row(
+                          children: [
+                            Icon(Icons.person_pin, color: Colors.teal),
+                            SizedBox(width: 8),
+                            Text('Reporter Details', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.teal)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        
+                        // NEW: A Consumer that waits for the user profile to load from Firestore
+                        Consumer(
+                          builder: (context, ref, child) {
+                            final reporterState = ref.watch(reporterProfileProvider(item.reportedBy));
+
+                            return reporterState.when(
+                              loading: () => const Center(child: CircularProgressIndicator()),
+                              error: (err, stack) => const Text('Could not load reporter details.', style: TextStyle(color: Colors.red)),
+                              data: (reporterData) {
+                                // Extract the real data from the database
+                                final phone = reporterData?['phoneNumber'] ?? '';
+                                final matric = reporterData?['matricNumber'] ?? item.reportedByName;
+
+                                return Column(
+                                  children: [
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 24,
+                                          backgroundColor: Colors.teal.shade50,
+                                          child: const Icon(Icons.person, color: Colors.teal, size: 28),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Matric ID: $matric', 
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                                              ),
+                                              Text(
+                                                phone.isNotEmpty ? 'Phone: $phone' : 'No phone number provided', 
+                                                style: TextStyle(color: Colors.grey.shade600, fontSize: 13)
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
+                                    // REAL Contact Action Buttons
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: phone.isEmpty ? null : () async {
+                                              // Clean the phone number and add Malaysian country code if needed
+                                              String formattedPhone = phone.replaceAll(RegExp(r'[^0-9]'), '');
+                                              if (formattedPhone.startsWith('0')) {
+                                                formattedPhone = '6$formattedPhone';
+                                              }
+                                              
+                                              final Uri whatsappUrl = Uri.parse('https://wa.me/$formattedPhone');
+                                              
+                                              try {
+                                                await launchUrl(whatsappUrl, mode: LaunchMode.externalApplication);
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not launch WhatsApp')));
+                                                }
+                                              }
+                                            },
+                                            icon: const Icon(Icons.chat, size: 18),
+                                            label: const Text('WhatsApp'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: const Color(0xFF25D366),
+                                              foregroundColor: Colors.white,
+                                              disabledBackgroundColor: Colors.grey.shade300,
+                                              elevation: 0,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: ElevatedButton.icon(
+                                            onPressed: phone.isEmpty ? null : () async {
+                                              final Uri phoneUrl = Uri.parse('tel:$phone');
+                                              try {
+                                                await launchUrl(phoneUrl);
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not open phone dialer')));
+                                                }
+                                              }
+                                            },
+                                            icon: const Icon(Icons.phone, size: 18),
+                                            label: const Text('Call'),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor: Colors.blue.shade600,
+                                              foregroundColor: Colors.white,
+                                              disabledBackgroundColor: Colors.grey.shade300,
+                                              elevation: 0,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
                 ),
                 const SizedBox(height: 40),
 
-                // Decision Buttons
                 // Decision Buttons
                 ElevatedButton.icon(
                   onPressed: () async {

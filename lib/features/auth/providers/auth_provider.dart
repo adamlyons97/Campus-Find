@@ -35,11 +35,12 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
-  Future<void> register(String email, String password, String name, String matricNo) async {
+  // NEW: Added phoneNumber to the incoming parameters to match the Sign Up UI
+  Future<void> register(String email, String password, String name, String matricNo, String phoneNumber) async {
     state = const AsyncValue.loading();
     try {
       // 1. Create the account via your existing secure repository
-      final userModel = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo);
+      final userModel = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo, phoneNumber);
       
       // 2. Grab the raw Firebase User session that was just created
       final firebaseUser = FirebaseAuth.instance.currentUser;
@@ -54,6 +55,8 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
           'fullName': name.trim(),
           'matricNumber': matricNo.trim(),
           'email': email.trim(),
+          'phoneNumber': phoneNumber.trim(), // NEW: Saves the mobile number to the database!
+          'role': 'student', // Good practice to explicitly set the default role here
           'createdAt': FieldValue.serverTimestamp(),
         });
       }
