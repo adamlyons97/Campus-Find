@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../home/providers/item_provider.dart';
 import '../providers/match_provider.dart';
 
@@ -106,8 +107,12 @@ class MyPostsScreen extends ConsumerWidget {
                                   const SizedBox(height: 12),
                                   ElevatedButton(
                                     onPressed: () {
-                                      // TODO: Build Match Details View
-                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Match review screen coming soon!')));
+                                      // Safely extract the IDs from the AI match alert
+                                      final matchId = matches.first.matchId;
+                                      final targetItemId = matches.first.matchedItemId;
+
+                                      // Push to the new screen, passing the IDs in the URL
+                                      context.push('/match-details?matchId=$matchId&matchedItemId=$targetItemId');
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
                                     child: const Text('REVIEW MATCH'),

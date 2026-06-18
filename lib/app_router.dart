@@ -7,6 +7,7 @@ import 'features/auth/views/sign_up_screen.dart';
 import 'features/home/views/home_dashboard.dart';
 import 'features/create_post/views/create_post_screen.dart';
 import 'features/claims/views/my_posts_screen.dart';
+import 'features/claims/views/match_details_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -50,6 +51,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/my-posts',
         name: 'my-posts',
         builder: (context, state) => const MyPostsScreen(),
+      ),
+      GoRoute(
+        path: '/match-details',
+        name: 'match-details',
+        builder: (context, state) {
+          // Extract the IDs from the URL query parameters
+          final matchId = state.uri.queryParameters['matchId']!;
+          final matchedItemId = state.uri.queryParameters['matchedItemId']!;
+          
+          return MatchDetailsScreen(
+            matchId: matchId,
+            matchedItemId: matchedItemId,
+          );
+        },
       ),
     ],
   );
