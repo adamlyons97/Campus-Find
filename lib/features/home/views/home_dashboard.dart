@@ -32,6 +32,13 @@ class HomeDashboard extends ConsumerWidget {
           ),
           actions: [
             IconButton(
+              icon: const Icon(Icons.notifications_active),
+              tooltip: 'My Posts & Alerts',
+              onPressed: () {
+                context.push('/my-posts');
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.logout),
               tooltip: 'Secure Logout',
               onPressed: () {

@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/auth/views/login_screen.dart';
 import 'features/auth/views/sign_up_screen.dart';
 import 'features/home/views/home_dashboard.dart';
-import 'features/create_post/views/create_post_screen.dart'; // NEW IMPORT
+import 'features/create_post/views/create_post_screen.dart';
+import 'features/claims/views/my_posts_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -44,6 +45,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/create-post',
         name: 'create-post',
         builder: (context, state) => const CreatePostScreen(),
+      ),
+      GoRoute(
+        path: '/my-posts',
+        name: 'my-posts',
+        builder: (context, state) => const MyPostsScreen(),
       ),
     ],
   );
