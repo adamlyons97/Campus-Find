@@ -113,22 +113,39 @@ class MyPostsScreen extends ConsumerWidget {
                         child: const Center(child: Text('Case Closed. Item returned successfully.', style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic))),
                       ),
                     ] else if (item.status == 'claimed') ...[
-                      // If claimed, show the final physical handover button!
+                      // If claimed, show the handover button AND the cancel button!
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(color: Colors.orange.shade50, borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12))),
                         child: Column(
                           children: [
-                            const Text('Meeting in progress. Click below once the item is physically handed over.', textAlign: TextAlign.center, style: TextStyle(color: Colors.deepOrange)),
+                            const Text('Meeting in progress. Please verify the item in person.', textAlign: TextAlign.center, style: TextStyle(color: Colors.deepOrange)),
                             const SizedBox(height: 12),
+                            // THE GREEN SUCCESS BUTTON
                             ElevatedButton.icon(
                               onPressed: () async {
-                                // Final status update to Resolved!
                                 await FirebaseFirestore.instance.collection('items').doc(item.itemId).set({'status': 'resolved'}, SetOptions(merge: true));
                               },
                               icon: const Icon(Icons.handshake),
                               label: const Text('CONFIRM HANDOVER (RESOLVE)', style: TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white, minimumSize: const Size(double.infinity, 48)),
+                            ),
+                            const SizedBox(height: 8),
+                            // THE NEW RED CANCEL BUTTON
+                            TextButton.icon(
+                              onPressed: () async {
+                                // Revert the item back to the Active hunting state!
+                                await FirebaseFirestore.instance.collection('items').doc(item.itemId).set({'status': 'active'}, SetOptions(merge: true));
+                                
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Claim cancelled. Item returned to ACTIVE status.')),
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.cancel, size: 18),
+                              label: const Text('Not my item (Cancel Claim)', style: TextStyle(fontSize: 13)),
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
                             ),
                           ],
                         ),
