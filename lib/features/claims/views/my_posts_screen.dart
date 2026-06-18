@@ -50,14 +50,42 @@ class MyPostsScreen extends ConsumerWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                item.type.toUpperCase(),
-                                style: TextStyle(
-                                  color: item.type == 'lost' ? Colors.red : Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                              Row(
+                                children: [
+                                  Text(
+                                    item.type.toUpperCase(),
+                                    style: TextStyle(
+                                      color: item.type == 'lost' ? Colors.red : Colors.green,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  // THE NEW LIVE STATUS BADGE
+                                  Builder(
+                                    builder: (context) {
+                                      // NOTE: Once you add 'status' to ItemModel, change this to:
+                                      final isResolved = item.status == 'resolved'; 
+                                      
+                                      return Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: isResolved ? Colors.grey.shade300 : Colors.blue.shade100, 
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          isResolved ? 'RESOLVED' : 'ACTIVE',
+                                          style: TextStyle(
+                                            fontSize: 10, 
+                                            fontWeight: FontWeight.bold, 
+                                            color: isResolved ? Colors.grey.shade700 : Colors.blue
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  ),
+                                ],
                               ),
-                              Text(item.categoryName, style: const TextStyle(color: Colors.grey)),
+                              Text(item.categoryName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                             ],
                           ),
                           const SizedBox(height: 8),
@@ -109,9 +137,7 @@ class MyPostsScreen extends ConsumerWidget {
                                     onPressed: () {
                                       final match = matches.first;
                                       
-                                      // SMART ROUTING LOGIC:
-                                      // If the user's item is the 'newItem', show them the 'matchedItem'.
-                                      // If the user's item is the 'matchedItem', show them the 'newItem'.
+                                      // SMART ROUTING LOGIC
                                       final targetItemId = match.newItemId == item.itemId 
                                           ? match.matchedItemId 
                                           : match.newItemId;

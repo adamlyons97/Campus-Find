@@ -104,8 +104,16 @@ class MatchDetailsScreen extends ConsumerWidget {
                 // Decision Buttons
                 ElevatedButton.icon(
                   onPressed: () async {
-                    // Update match status to accepted
+                    // 1. Update match status to accepted
                     await ref.read(matchRepositoryProvider).updateMatchStatus(matchId, 'accepted');
+                    
+                    // 2. OFFICIAL STATUS MANAGEMENT: Mark item as 'resolved' in the database!
+                    final db = FirebaseFirestore.instance;
+                    await db.collection('items').doc(item.itemId).set(
+                      {'status': 'resolved'}, 
+                      SetOptions(merge: true) // Safely merges the status field without deleting other data
+                    );
+
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Match Accepted! Case marked as resolved.'), backgroundColor: Colors.green),
