@@ -102,21 +102,30 @@ class MatchDetailsScreen extends ConsumerWidget {
                 const SizedBox(height: 40),
 
                 // Decision Buttons
+                // Decision Buttons
                 ElevatedButton.icon(
                   onPressed: () async {
+                    final db = FirebaseFirestore.instance;
+
                     // 1. Update match status to accepted
                     await ref.read(matchRepositoryProvider).updateMatchStatus(matchId, 'accepted');
                     
-                    // 2. OFFICIAL STATUS MANAGEMENT: Mark item as 'resolved' in the database!
-                    final db = FirebaseFirestore.instance;
-                    await db.collection('items').doc(item.itemId).set(
-                      {'status': 'resolved'}, 
-                      SetOptions(merge: true) // Safely merges the status field without deleting other data
-                    );
+                    // 2. Fetch the match document to find both items connected by the bridge
+                    final matchDoc = await db.collection('matches').doc(matchId).get();
+                    
+                    if (matchDoc.exists) {
+                      final matchData = matchDoc.data()!;
+                      final firstItemId = matchData['newItemId'];
+                      final secondItemId = matchData['matchedItemId'];
+
+                      // 3. STATUS MANAGEMENT: Mark BOTH items as resolved in Firestore!
+                      await db.collection('items').doc(firstItemId).set({'status': 'resolved'}, SetOptions(merge: true));
+                      await db.collection('items').doc(secondItemId).set({'status': 'resolved'}, SetOptions(merge: true));
+                    }
 
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Match Accepted! Case marked as resolved.'), backgroundColor: Colors.green),
+                        const SnackBar(content: Text('Match Accepted! Both items marked as resolved.'), backgroundColor: Colors.green),
                       );
                       context.pop(); // Go back to dashboard
                     }

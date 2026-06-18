@@ -61,9 +61,10 @@ class MyPostsScreen extends ConsumerWidget {
                                   ),
                                   const SizedBox(width: 12),
                                   // THE NEW LIVE STATUS BADGE
+                                  // THE NEW LIVE STATUS BADGE
                                   Builder(
                                     builder: (context) {
-                                      // NOTE: Once you add 'status' to ItemModel, change this to:
+                                      // THE FIX: Switch this line from false to the live data evaluation
                                       final isResolved = item.status == 'resolved'; 
                                       
                                       return Container(
