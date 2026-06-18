@@ -73,7 +73,7 @@ class MyPostsScreen extends ConsumerWidget {
 
                         return matchState.when(
                           loading: () => const Padding(padding: EdgeInsets.all(16), child: Center(child: LinearProgressIndicator())),
-                          error: (err, stack) => const SizedBox.shrink(),
+                          error: (err, stack) => Padding(padding: const EdgeInsets.all(16), child: Text(err.toString(), style: const TextStyle(color: Colors.red))),
                           data: (matches) {
                             if (matches.isEmpty) {
                               return const Padding(
