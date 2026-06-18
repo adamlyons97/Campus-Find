@@ -66,10 +66,16 @@ class ClaimController extends AutoDisposeAsyncNotifier<void> {
     );
   }
 
-  Future<void> reject(String claimId) async {
+  Future<void> reject({
+    required String claimId,
+    required String itemId,
+  }) async {
     state = const AsyncLoading();
     state = await AsyncValue.guard(
-      () => ref.read(claimRepositoryProvider).rejectClaim(claimId),
+      () => ref.read(claimRepositoryProvider).rejectClaim(
+            claimId: claimId,
+            itemId: itemId,
+          ),
     );
   }
 }

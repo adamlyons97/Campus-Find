@@ -18,7 +18,8 @@ class ClaimRepository {
   CollectionReference<Map<String, dynamic>> get _items =>
       _db.collection(FirestorePaths.items);
 
-  /// Submits a claim with the claimant's proof of ownership.
+  /// Submits a claim with the claimant's proof of ownership and atomically
+  /// moves the item from `active` to `claimed` (locked while under review).
   /// Status begins as `pending` until a verifier approves it.
   Future<String> submitClaim({
     required String itemId,
@@ -29,6 +30,7 @@ class ClaimRepository {
     required String proofOfOwnership,
   }) async {
     final now = DateTime.now();
+    final docRef = _claims.doc();
     final claim = ClaimModel(
       id: '',
       itemId: itemId,
@@ -41,8 +43,11 @@ class ClaimRepository {
       updatedAt: now,
       status: ClaimStatus.pending,
     );
-    final ref = await _claims.add(claim.toMap());
-    return ref.id;
+    final batch = _db.batch();
+    batch.set(docRef, claim.toMap());
+    batch.update(_items.doc(itemId), {'status': ItemStatus.claimed});
+    await batch.commit();
+    return docRef.id;
   }
 
   /// Live stream of all claims submitted by a user.
@@ -82,10 +87,20 @@ class ClaimRepository {
     await batch.commit();
   }
 
-  Future<void> rejectClaim(String claimId) => _claims.doc(claimId).update({
-        'status': ClaimStatus.rejected,
-        'updatedAt': Timestamp.now(),
-      });
+  /// Rejects a claim and atomically returns the item to the `active` pool so
+  /// it can be discovered and claimed again.
+  Future<void> rejectClaim({
+    required String claimId,
+    required String itemId,
+  }) async {
+    final batch = _db.batch();
+    batch.update(_claims.doc(claimId), {
+      'status': ClaimStatus.rejected,
+      'updatedAt': Timestamp.now(),
+    });
+    batch.update(_items.doc(itemId), {'status': ItemStatus.active});
+    await batch.commit();
+  }
 }
 
 final claimRepositoryProvider = Provider<ClaimRepository>(

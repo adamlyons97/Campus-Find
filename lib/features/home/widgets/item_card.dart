@@ -17,11 +17,13 @@ class ItemCard extends StatelessWidget {
 
   String get _badgeLabel {
     if (item.status == ItemStatus.resolved) return 'RETURNED';
+    if (item.status == ItemStatus.claimed) return 'CLAIMED';
     return item.type == ItemType.found ? 'FOUND' : 'LOST';
   }
 
   String get _badgeKey {
     if (item.status == ItemStatus.resolved) return 'resolved';
+    if (item.status == ItemStatus.claimed) return 'claimed';
     return item.type == ItemType.found ? 'found' : 'lost';
   }
 
@@ -136,8 +138,7 @@ class _Thumb extends StatelessWidget {
           height: size,
           fit: BoxFit.cover,
           placeholder: (_, __) => const _IconBox(icon: Icons.image_outlined),
-          errorWidget: (_, __, ___) =>
-              _IconBox(icon: fallbackIcon),
+          errorWidget: (_, __, ___) => _IconBox(icon: fallbackIcon),
         ),
       );
     }

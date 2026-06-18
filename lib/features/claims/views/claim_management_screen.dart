@@ -58,8 +58,7 @@ class _ClaimReviewCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.inventory_2_outlined,
-                    color: AppTheme.primary),
+                const Icon(Icons.inventory_2_outlined, color: AppTheme.primary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -90,8 +89,8 @@ class _ClaimReviewCard extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Stated proof of ownership:',
-                      style: TextStyle(
-                          fontSize: 12, fontWeight: FontWeight.w600)),
+                      style:
+                          TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 4),
                   Text(claim.proofOfOwnership),
                 ],
@@ -104,9 +103,11 @@ class _ClaimReviewCard extends ConsumerWidget {
                   child: OutlinedButton.icon(
                     onPressed: busy
                         ? null
-                        : () => ref
-                            .read(claimControllerProvider.notifier)
-                            .reject(claim.id),
+                        : () =>
+                            ref.read(claimControllerProvider.notifier).reject(
+                                  claimId: claim.id,
+                                  itemId: claim.itemId,
+                                ),
                     icon: const Icon(Icons.close, color: AppTheme.danger),
                     label: const Text('Reject',
                         style: TextStyle(color: AppTheme.danger)),
@@ -120,12 +121,11 @@ class _ClaimReviewCard extends ConsumerWidget {
                   child: FilledButton.icon(
                     onPressed: busy
                         ? null
-                        : () => ref
-                            .read(claimControllerProvider.notifier)
-                            .approve(
-                              claimId: claim.id,
-                              itemId: claim.itemId,
-                            ),
+                        : () =>
+                            ref.read(claimControllerProvider.notifier).approve(
+                                  claimId: claim.id,
+                                  itemId: claim.itemId,
+                                ),
                     icon: const Icon(Icons.check),
                     label: const Text('Approve'),
                   ),

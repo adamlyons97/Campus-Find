@@ -41,6 +41,8 @@ class AppTheme {
       case 'resolved':
       case 'returned':
         return const Color(0xFFE3F6EA);
+      case 'claimed':
+        return const Color(0xFFFFF1DC);
       case 'lost':
       default:
         return const Color(0xFFFDE6E6);
@@ -54,6 +56,8 @@ class AppTheme {
       case 'resolved':
       case 'returned':
         return success;
+      case 'claimed':
+        return warning;
       case 'lost':
       default:
         return danger;
