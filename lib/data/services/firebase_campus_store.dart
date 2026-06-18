@@ -22,11 +22,39 @@ class FirebaseCampusStore implements CampusStore {
       .collection('profiles')
       .doc(FirebaseAuth.instance.currentUser?.uid ?? 'default');
 
+  String get _currentUid => FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  String get _currentEmail =>
+      FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase() ?? '';
+
+  bool _isOwnerData(Map<String, dynamic>? data, String uid) {
+    if (data == null) {
+      return false;
+    }
+    final ownerUid = data['owner_uid'] as String? ?? '';
+    if (ownerUid.isNotEmpty) {
+      return ownerUid == uid;
+    }
+    final contact = (data['contact'] as String? ?? '').trim().toLowerCase();
+    return _currentEmail.isNotEmpty && contact == _currentEmail;
+  }
+
+  String _requireUid() {
+    final uid = _currentUid;
+    if (uid.isEmpty) {
+      throw StateError('You must be signed in to perform this action.');
+    }
+    return uid;
+  }
+
   @override
   Future<void> init() async {}
 
   @override
   Future<Profile> getProfile() async {
+    if (_currentUid.isEmpty) {
+      return Profile.fallback;
+    }
     final snapshot = await _profile.get();
     final data = snapshot.data();
     if (data == null) {
@@ -38,6 +66,7 @@ class FirebaseCampusStore implements CampusStore {
 
   @override
   Future<void> saveProfile(Profile profile) async {
+    _requireUid();
     await _profile.set(profile.toMap()..remove('id'));
   }
 
@@ -46,6 +75,9 @@ class FirebaseCampusStore implements CampusStore {
     String query = '',
     ItemStatus? status,
   }) async {
+    if (_currentUid.isEmpty) {
+      return const [];
+    }
     Query<Map<String, dynamic>> firestoreQuery = _items.orderBy(
       'created_at',
       descending: true,
@@ -61,11 +93,22 @@ class FirebaseCampusStore implements CampusStore {
     final snapshot = await firestoreQuery.get();
     final normalizedQuery = query.trim().toLowerCase();
 
-    final items = snapshot.docs.map((document) {
+    final items = <CampusItem>[];
+    for (final document in snapshot.docs) {
       final data = Map<String, Object?>.from(document.data());
       data['id'] = int.tryParse(document.id) ?? data['id'];
-      return CampusItem.fromMap(data);
-    }).toList();
+      if ((data['owner_uid'] as String? ?? '').isEmpty &&
+          _isOwnerData(document.data(), _currentUid)) {
+        data['owner_uid'] = _currentUid;
+        try {
+          await document.reference.update({'owner_uid': _currentUid});
+        } catch (_) {
+          // The UI can still recognize legacy ownership by email until the
+          // updated Firestore rules are published.
+        }
+      }
+      items.add(CampusItem.fromMap(data));
+    }
 
     if (normalizedQuery.isEmpty) {
       return items;
@@ -81,23 +124,34 @@ class FirebaseCampusStore implements CampusStore {
 
   @override
   Future<CampusItem> createItem(CampusItem item) async {
+    final uid = _requireUid();
     final id = item.id ?? DateTime.now().microsecondsSinceEpoch;
-    final itemWithId = item.copyWith(id: id);
+    final itemWithId = item.copyWith(id: id, ownerUid: uid);
     await _items.doc(id.toString()).set(itemWithId.toMap());
     return itemWithId;
   }
 
   @override
   Future<void> updateItem(CampusItem item) async {
+    final uid = _requireUid();
     final id = item.id;
     if (id == null) {
       throw ArgumentError('Cannot update an item without an id.');
     }
-    await _items.doc(id.toString()).set(item.toMap());
+    final existing = await _items.doc(id.toString()).get();
+    if (!_isOwnerData(existing.data(), uid)) {
+      throw StateError('Only the reporter can update this item.');
+    }
+    await _items.doc(id.toString()).set(item.copyWith(ownerUid: uid).toMap());
   }
 
   @override
   Future<void> deleteItem(int id) async {
+    final uid = _requireUid();
+    final existing = await _items.doc(id.toString()).get();
+    if (!_isOwnerData(existing.data(), uid)) {
+      throw StateError('Only the reporter can delete this item.');
+    }
     final batch = _firestore.batch();
     batch.delete(_items.doc(id.toString()));
 
@@ -111,6 +165,9 @@ class FirebaseCampusStore implements CampusStore {
 
   @override
   Future<List<ItemClaim>> getClaims() async {
+    if (_currentUid.isEmpty) {
+      return const [];
+    }
     final snapshot = await _claims
         .orderBy('created_at', descending: true)
         .get();
@@ -123,17 +180,28 @@ class FirebaseCampusStore implements CampusStore {
 
   @override
   Future<ItemClaim> createClaim(ItemClaim claim) async {
+    final uid = _requireUid();
+    final item = await _items.doc(claim.itemId.toString()).get();
+    final ownerUid = item.data()?['owner_uid'] as String? ?? '';
+    if (ownerUid == uid || _isOwnerData(item.data(), uid)) {
+      throw StateError('The reporter cannot claim their own item.');
+    }
     final id = claim.id ?? DateTime.now().microsecondsSinceEpoch;
-    final claimWithId = claim.copyWith(id: id);
+    final claimWithId = claim.copyWith(id: id, claimantUid: uid);
     await _claims.doc(id.toString()).set(claimWithId.toMap());
     return claimWithId;
   }
 
   @override
   Future<void> updateClaim(ItemClaim claim) async {
+    final uid = _requireUid();
     final id = claim.id;
     if (id == null) {
       throw ArgumentError('Cannot update a claim without an id.');
+    }
+    final item = await _items.doc(claim.itemId.toString()).get();
+    if (!_isOwnerData(item.data(), uid)) {
+      throw StateError('Only the reporter can review this claim.');
     }
     await _claims.doc(id.toString()).set(claim.toMap());
   }

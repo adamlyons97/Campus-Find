@@ -892,7 +892,7 @@ class _FilterChips extends StatelessWidget {
                 selected: controller.filter == filter,
                 showCheckmark: false,
                 label: Text(
-                  filter == ItemFilter.claimed ? 'Returned' : filter.label,
+                  filter == ItemFilter.claimed ? 'Resolved' : filter.label,
                 ),
                 onSelected: (_) => controller.setFilter(filter),
               ),
@@ -956,7 +956,7 @@ class _ItemTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _StatusPill(status: item.status),
+              _StatusPill(item: item),
             ],
           ),
         ),
@@ -1003,23 +1003,19 @@ class _ItemIcon extends StatelessWidget {
 }
 
 class _StatusPill extends StatelessWidget {
-  const _StatusPill({required this.status});
+  const _StatusPill({required this.item});
 
-  final ItemStatus status;
+  final CampusItem item;
 
   @override
   Widget build(BuildContext context) {
-    final color = switch (status) {
+    final color = switch (item.status) {
       ItemStatus.lost => _dangerRed,
       ItemStatus.found => const Color(0xFF3B82F6),
       ItemStatus.claimed => const Color(0xFF7C3AED),
     };
 
-    final label = switch (status) {
-      ItemStatus.lost => 'LOST',
-      ItemStatus.found => 'FOUND',
-      ItemStatus.claimed => 'RETURNED',
-    };
+    final label = item.displayStatusLabel.toUpperCase();
 
     return Container(
       constraints: const BoxConstraints(minWidth: 48),
@@ -1243,7 +1239,7 @@ class _ClaimRow extends StatelessWidget {
                   onPressed: () =>
                       controller.updateItemStatus(item, ItemStatus.claimed),
                   icon: const Icon(Icons.verified, size: 16),
-                  label: const Text('Returned'),
+                  label: Text(item.resolvedLabel),
                 ),
             ],
           ),
@@ -1626,6 +1622,8 @@ class _ItemDetailsPage extends StatelessWidget {
         }
 
         final claims = controller.claimsForItem(itemId);
+        final isOwner = controller.isItemOwner(item);
+        final canClaim = controller.canClaimItem(item);
 
         return Scaffold(
           backgroundColor: _page,
@@ -1646,12 +1644,13 @@ class _ItemDetailsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Delete',
-                      onPressed: () =>
-                          _confirmDelete(context, controller, item),
-                      icon: const Icon(Icons.delete_outline),
-                    ),
+                    if (isOwner)
+                      IconButton(
+                        tooltip: 'Delete',
+                        onPressed: () =>
+                            _confirmDelete(context, controller, item),
+                        icon: const Icon(Icons.delete_outline),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 18),
@@ -1686,7 +1685,7 @@ class _ItemDetailsPage extends StatelessWidget {
                               ],
                             ),
                           ),
-                          _StatusPill(status: item.status),
+                          _StatusPill(item: item),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -1727,70 +1726,53 @@ class _ItemDetailsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                _Panel(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const _Eyebrow('UPDATE STATUS'),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
+                if (isOwner) ...[
+                  const SizedBox(height: 12),
+                  _Panel(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _Eyebrow('UPDATE STATUS'),
+                        const SizedBox(height: 10),
+                        if (item.status == ItemStatus.claimed)
+                          Text(
+                            'This item is marked as ${item.resolvedLabel.toLowerCase()}.',
+                            style: const TextStyle(color: _mutedInk),
+                          )
+                        else
                           OutlinedButton.icon(
-                            onPressed: item.status == ItemStatus.lost
-                                ? null
-                                : () => controller.updateItemStatus(
-                                    item,
-                                    ItemStatus.lost,
-                                  ),
-                            icon: const Icon(Icons.warning_amber, size: 16),
-                            label: const Text('Lost'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: item.status == ItemStatus.found
-                                ? null
-                                : () => controller.updateItemStatus(
-                                    item,
-                                    ItemStatus.found,
-                                  ),
-                            icon: const Icon(Icons.check, size: 16),
-                            label: const Text('Found'),
-                          ),
-                          OutlinedButton.icon(
-                            onPressed: item.status == ItemStatus.claimed
-                                ? null
-                                : () => controller.updateItemStatus(
-                                    item,
-                                    ItemStatus.claimed,
-                                  ),
+                            onPressed: () =>
+                                _resolveItem(context, controller, item),
                             icon: const Icon(Icons.verified, size: 16),
-                            label: const Text('Returned'),
+                            label: Text('Mark as ${item.resolvedLabel}'),
                           ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 18),
                 Row(
                   children: [
                     const Expanded(child: _Eyebrow('CLAIMS')),
-                    TextButton.icon(
-                      onPressed: () =>
-                          _showClaimForm(context, controller, item),
-                      icon: const Icon(Icons.assignment_add, size: 16),
-                      label: const Text('Claim'),
-                    ),
+                    if (canClaim)
+                      TextButton.icon(
+                        onPressed: () =>
+                            _showClaimForm(context, controller, item),
+                        icon: const Icon(Icons.assignment_add, size: 16),
+                        label: const Text('Claim'),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 if (claims.isEmpty)
-                  const _EmptyPanel(
+                  _EmptyPanel(
                     icon: Icons.assignment_outlined,
-                    title: 'No claims for this item',
-                    message: 'A student can submit a claim from this screen.',
+                    title: isOwner
+                        ? 'No claims for this item'
+                        : 'No claim submitted',
+                    message: isOwner
+                        ? 'Another student can submit a claim from this screen.'
+                        : 'Use the Claim button to submit ownership details.',
                   )
                 else
                   for (final claim in claims)
@@ -1842,7 +1824,20 @@ class _ItemDetailsPage extends StatelessWidget {
       return;
     }
 
-    await controller.deleteItem(itemId);
+    try {
+      await controller.deleteItem(itemId);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to delete this item. Check that Firestore rules are published.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
     if (!context.mounted) {
       return;
     }
@@ -1850,6 +1845,26 @@ class _ItemDetailsPage extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Item deleted')));
+  }
+
+  Future<void> _resolveItem(
+    BuildContext context,
+    CampusController controller,
+    CampusItem item,
+  ) async {
+    try {
+      await controller.updateItemStatus(item, ItemStatus.claimed);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to update status. Check that Firestore rules are published.',
+            ),
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -1861,6 +1876,9 @@ class _ClaimDetailCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final item = controller.findItem(claim.itemId);
+    final canReview = item != null && controller.isItemOwner(item);
+
     return _Panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1881,26 +1899,28 @@ class _ClaimDetailCard extends StatelessWidget {
             children: [
               _ClaimStatusPill(status: claim.status),
               const Spacer(),
-              IconButton(
-                tooltip: 'Approve',
-                onPressed: claim.status == ClaimStatus.approved
-                    ? null
-                    : () => controller.updateClaimStatus(
-                        claim,
-                        ClaimStatus.approved,
-                      ),
-                icon: const Icon(Icons.check_circle_outline),
-              ),
-              IconButton(
-                tooltip: 'Reject',
-                onPressed: claim.status == ClaimStatus.rejected
-                    ? null
-                    : () => controller.updateClaimStatus(
-                        claim,
-                        ClaimStatus.rejected,
-                      ),
-                icon: const Icon(Icons.cancel_outlined),
-              ),
+              if (canReview) ...[
+                IconButton(
+                  tooltip: 'Approve',
+                  onPressed: claim.status == ClaimStatus.approved
+                      ? null
+                      : () => controller.updateClaimStatus(
+                          claim,
+                          ClaimStatus.approved,
+                        ),
+                  icon: const Icon(Icons.check_circle_outline),
+                ),
+                IconButton(
+                  tooltip: 'Reject',
+                  onPressed: claim.status == ClaimStatus.rejected
+                      ? null
+                      : () => controller.updateClaimStatus(
+                          claim,
+                          ClaimStatus.rejected,
+                        ),
+                  icon: const Icon(Icons.cancel_outlined),
+                ),
+              ],
             ],
           ),
         ],
@@ -2041,12 +2061,26 @@ class _ClaimFormSheetState extends State<_ClaimFormSheet> {
     }
 
     setState(() => _isSaving = true);
-    await widget.controller.createClaim(
-      item: widget.item,
-      claimantName: _nameController.text,
-      contact: _contactController.text,
-      message: _messageController.text,
-    );
+    try {
+      await widget.controller.createClaim(
+        item: widget.item,
+        claimantName: _nameController.text,
+        contact: _contactController.text,
+        message: _messageController.text,
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to submit claim. Check that Firestore rules are published.',
+            ),
+          ),
+        );
+      }
+      return;
+    }
 
     if (!mounted) {
       return;

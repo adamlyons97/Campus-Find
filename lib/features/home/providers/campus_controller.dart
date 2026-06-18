@@ -1,3 +1,5 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../data/models/campus_item.dart';
@@ -54,9 +56,46 @@ class CampusController extends ChangeNotifier {
   Profile get profile => _profile;
   List<CampusItem> get allItems => List.unmodifiable(_allItems);
   List<CampusItem> get visibleItems => List.unmodifiable(_visibleItems);
-  List<ItemClaim> get claims => List.unmodifiable(_claims);
+  List<ItemClaim> get claims => List.unmodifiable(
+    _claims.where((claim) {
+      final item = findItem(claim.itemId);
+      return item != null && isItemOwner(item);
+    }),
+  );
   String get query => _query;
   ItemFilter get filter => _filter;
+
+  String get currentUserUid {
+    if (Firebase.apps.isNotEmpty) {
+      return FirebaseAuth.instance.currentUser?.uid ?? '';
+    }
+    return _profile.email.trim().toLowerCase();
+  }
+
+  String get currentUserEmail {
+    if (Firebase.apps.isNotEmpty) {
+      return FirebaseAuth.instance.currentUser?.email?.trim().toLowerCase() ??
+          '';
+    }
+    return _profile.email.trim().toLowerCase();
+  }
+
+  bool isItemOwner(CampusItem item) {
+    final uid = currentUserUid;
+    if (uid.isEmpty) {
+      return false;
+    }
+    if (item.ownerUid.isNotEmpty) {
+      return item.ownerUid == uid;
+    }
+    return currentUserEmail.isNotEmpty &&
+        item.contact.trim().toLowerCase() == currentUserEmail;
+  }
+
+  bool canClaimItem(CampusItem item) {
+    final uid = currentUserUid;
+    return uid.isNotEmpty && !isItemOwner(item);
+  }
 
   int get lostCount =>
       _allItems.where((item) => item.status == ItemStatus.lost).length;
@@ -111,7 +150,19 @@ class CampusController extends ChangeNotifier {
   }
 
   List<ItemClaim> claimsForItem(int itemId) {
-    return _claims.where((claim) => claim.itemId == itemId).toList();
+    final item = findItem(itemId);
+    if (item == null) {
+      return const [];
+    }
+    if (isItemOwner(item)) {
+      return _claims.where((claim) => claim.itemId == itemId).toList();
+    }
+    return _claims
+        .where(
+          (claim) =>
+              claim.itemId == itemId && claim.claimantUid == currentUserUid,
+        )
+        .toList();
   }
 
   Future<void> createItem({
@@ -135,6 +186,8 @@ class CampusController extends ChangeNotifier {
       latitude: latitude,
       longitude: longitude,
       status: status,
+      reportType: status,
+      ownerUid: currentUserUid,
       reporterName: reporterName.trim(),
       contact: contact.trim(),
       imageData: imageData,
@@ -148,6 +201,9 @@ class CampusController extends ChangeNotifier {
   }
 
   Future<void> updateItemStatus(CampusItem item, ItemStatus status) async {
+    if (!isItemOwner(item)) {
+      throw StateError('Only the reporter can update this item status.');
+    }
     await _store.updateItem(
       item.copyWith(status: status, updatedAt: DateTime.now()),
     );
@@ -156,6 +212,10 @@ class CampusController extends ChangeNotifier {
   }
 
   Future<void> deleteItem(int id) async {
+    final item = findItem(id);
+    if (item == null || !isItemOwner(item)) {
+      throw StateError('Only the reporter can delete this item.');
+    }
     await _store.deleteItem(id);
     await _refreshData();
     notifyListeners();
@@ -171,10 +231,14 @@ class CampusController extends ChangeNotifier {
     if (itemId == null) {
       throw ArgumentError('Cannot create a claim for an unsaved item.');
     }
+    if (!canClaimItem(item)) {
+      throw StateError('The reporter cannot claim their own item.');
+    }
 
     await _store.createClaim(
       ItemClaim(
         itemId: itemId,
+        claimantUid: currentUserUid,
         claimantName: claimantName.trim(),
         contact: contact.trim(),
         message: message.trim(),
@@ -187,6 +251,10 @@ class CampusController extends ChangeNotifier {
   }
 
   Future<void> updateClaimStatus(ItemClaim claim, ClaimStatus status) async {
+    final item = findItem(claim.itemId);
+    if (item == null || !isItemOwner(item)) {
+      throw StateError('Only the reporter can review claims for this item.');
+    }
     await _store.updateClaim(claim.copyWith(status: status));
     await _refreshData();
     notifyListeners();

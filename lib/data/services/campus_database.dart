@@ -23,7 +23,7 @@ class CampusDatabase implements CampusStore {
     final databasePath = path.join(databasesPath, 'campusfind.db');
     final opened = await openDatabase(
       databasePath,
-      version: 4,
+      version: 6,
       onCreate: _createSchema,
       onUpgrade: _upgradeSchema,
     );
@@ -57,6 +57,8 @@ class CampusDatabase implements CampusStore {
         latitude REAL,
         longitude REAL,
         status TEXT NOT NULL,
+        report_type TEXT NOT NULL DEFAULT 'lost',
+        owner_uid TEXT NOT NULL DEFAULT '',
         reporter_name TEXT NOT NULL,
         contact TEXT NOT NULL,
         image_data TEXT,
@@ -69,6 +71,7 @@ class CampusDatabase implements CampusStore {
       CREATE TABLE claims (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         item_id INTEGER NOT NULL,
+        claimant_uid TEXT NOT NULL DEFAULT '',
         claimant_name TEXT NOT NULL,
         contact TEXT NOT NULL,
         message TEXT NOT NULL,
@@ -95,6 +98,22 @@ class CampusDatabase implements CampusStore {
     }
     if (oldVersion < 4) {
       await _removeSampleItems(db);
+    }
+    if (oldVersion < 5) {
+      await db.execute(
+        "ALTER TABLE items ADD COLUMN owner_uid TEXT NOT NULL DEFAULT ''",
+      );
+      await db.execute(
+        "ALTER TABLE claims ADD COLUMN claimant_uid TEXT NOT NULL DEFAULT ''",
+      );
+    }
+    if (oldVersion < 6) {
+      await db.execute(
+        "ALTER TABLE items ADD COLUMN report_type TEXT NOT NULL DEFAULT 'lost'",
+      );
+      await db.execute(
+        "UPDATE items SET report_type = status WHERE status IN ('lost', 'found')",
+      );
     }
   }
 
