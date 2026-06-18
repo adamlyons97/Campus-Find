@@ -1,6 +1,12 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/item_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // NEW IMPORT
+
+// Global provider to expose the AI engine across our application architecture
+final aiMatchServiceProvider = Provider<AiMatchService>((ref) {
+  return AiMatchService();
+});
 
 class AiMatchService {
   late final GenerativeModel _model;
