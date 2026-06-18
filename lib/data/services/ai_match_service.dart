@@ -1,9 +1,8 @@
 import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/api_constants.dart';
 import '../models/item_model.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart'; // NEW IMPORT
 
-// Global provider to expose the AI engine across our application architecture
 final aiMatchServiceProvider = Provider<AiMatchService>((ref) {
   return AiMatchService();
 });
@@ -12,21 +11,18 @@ class AiMatchService {
   late final GenerativeModel _model;
 
   AiMatchService() {
-    // We are using gemini-1.5-flash as it is extremely fast and perfect for text comparison
     _model = GenerativeModel(
       model: 'gemini-2.5-flash',
       apiKey: ApiConstants.geminiApiKey,
     );
   }
 
-  /// Compares a newly reported item against a list of active items from the database
   Future<String?> findPotentialMatch({
     required ItemModel newItem,
     required List<ItemModel> existingItems,
   }) async {
     if (existingItems.isEmpty) return null;
 
-    // 1. Format the existing items into a readable list for the AI
     final itemsListString = existingItems.map((item) {
       return '''
       ID: ${item.itemId}
@@ -36,7 +32,6 @@ class AiMatchService {
       ''';
     }).join('\n---\n');
 
-    // 2. Craft the Prompt Instructions
     final prompt = '''
     You are an intelligent matching assistant for a university Lost & Found app.
     A user just reported a NEW item:
@@ -53,24 +48,36 @@ class AiMatchService {
     
     RULES:
     1. Only consider matches where you are 80% or more confident.
-    2. If there IS a match, reply with ONLY the ID string of the matched item. Do not include any other text, punctuation, or explanation.
+    2. If there IS a match, reply with ABSOLUTELY NOTHING EXCEPT the ID string of the matched item.
     3. If there is NO confident match, reply with exactly the word "NONE".
     ''';
 
     try {
-      // 3. Send the request to Gemini
       final response = await _model.generateContent([Content.text(prompt)]);
-      final aiAnswer = response.text?.trim() ?? 'NONE';
+      String aiAnswer = response.text ?? 'NONE';
 
-      // 4. Parse the response
-      if (aiAnswer == 'NONE' || aiAnswer.isEmpty) {
+      // --- AGGRESSIVE SANITIZATION ENGINE ---
+      // 1. Check if the AI decided there is no match
+      if (aiAnswer.toUpperCase().contains('NONE') || aiAnswer.isEmpty) {
         return null;
       }
-      return aiAnswer; // Returns the itemId of the match!
+
+      // 2. Strip away common extra characters LLMs try to add (quotes, markdown, labels)
+      aiAnswer = aiAnswer.replaceAll(RegExp(r'(ID:|-|\*|`|"|\\|\n|id:)'), '').trim();
+
+      // 3. Extract exactly the alphanumeric Firebase ID (usually 20 characters)
+      final idRegex = RegExp(r'[a-zA-Z0-9]{15,30}');
+      final match = idRegex.firstMatch(aiAnswer);
+
+      if (match != null) {
+        return match.group(0); // Safely returns JUST the pure ID
+      }
+      
+      return null; 
       
     } catch (e) {
       print('Gemini AI Error: $e');
-      return null; // Fail gracefully so the app doesn't crash
+      return null;
     }
   }
 }
