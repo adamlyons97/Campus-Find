@@ -39,12 +39,13 @@ class HomeDashboard extends ConsumerWidget {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.logout),
-              tooltip: 'Secure Logout',
+              icon: const Icon(Icons.account_circle, size: 28),
+              tooltip: 'My Profile',
               onPressed: () {
-                ref.read(authControllerProvider.notifier).logout();
+                context.push('/profile');
               },
             ),
+            const SizedBox(width: 8),
           ],
         ),
         

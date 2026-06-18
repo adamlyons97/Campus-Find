@@ -8,6 +8,7 @@ import 'features/home/views/home_dashboard.dart';
 import 'features/create_post/views/create_post_screen.dart';
 import 'features/claims/views/my_posts_screen.dart';
 import 'features/claims/views/match_details_screen.dart';
+import 'features/profile/views/profile_screen.dart';
 import 'features/auth/providers/auth_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -65,6 +66,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             matchedItemId: matchedItemId,
           );
         },
+      ),
+      GoRoute(
+        path: '/profile',
+        name: 'profile',
+        builder: (context, state) => const ProfileScreen(),
       ),
     ],
   );
