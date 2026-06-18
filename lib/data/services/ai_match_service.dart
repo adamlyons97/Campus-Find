@@ -14,7 +14,7 @@ class AiMatchService {
   AiMatchService() {
     // We are using gemini-1.5-flash as it is extremely fast and perfect for text comparison
     _model = GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.5-flash',
       apiKey: ApiConstants.geminiApiKey,
     );
   }
