@@ -107,12 +107,17 @@ class MyPostsScreen extends ConsumerWidget {
                                   const SizedBox(height: 12),
                                   ElevatedButton(
                                     onPressed: () {
-                                      // Safely extract the IDs from the AI match alert
-                                      final matchId = matches.first.matchId;
-                                      final targetItemId = matches.first.matchedItemId;
+                                      final match = matches.first;
+                                      
+                                      // SMART ROUTING LOGIC:
+                                      // If the user's item is the 'newItem', show them the 'matchedItem'.
+                                      // If the user's item is the 'matchedItem', show them the 'newItem'.
+                                      final targetItemId = match.newItemId == item.itemId 
+                                          ? match.matchedItemId 
+                                          : match.newItemId;
 
                                       // Push to the new screen, passing the IDs in the URL
-                                      context.push('/match-details?matchId=$matchId&matchedItemId=$targetItemId');
+                                      context.push('/match-details?matchId=${match.matchId}&matchedItemId=$targetItemId');
                                     },
                                     style: ElevatedButton.styleFrom(backgroundColor: Colors.amber, foregroundColor: Colors.black),
                                     child: const Text('REVIEW MATCH'),
