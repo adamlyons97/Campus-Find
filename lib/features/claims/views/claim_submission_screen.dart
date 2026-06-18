@@ -58,7 +58,7 @@ class _ClaimSubmissionScreenState extends ConsumerState<ClaimSubmissionScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(claimControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Claim This Item')),
+      appBar: AppBar(title: const Text('Secure Claim Verification')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Form(
@@ -93,14 +93,14 @@ class _ClaimSubmissionScreenState extends ConsumerState<ClaimSubmissionScreen> {
                 controller: _proof,
                 maxLines: 5,
                 decoration: const InputDecoration(
-                  labelText: 'Proof of Ownership',
+                  labelText: 'Private Item Details',
                   hintText: AppStrings.claimVerificationHint,
                   alignLabelWithHint: true,
                 ),
                 validator: (v) {
-                  if (v == null || v.trim().length < 10) {
-                    return 'Please describe a specific private detail '
-                        '(at least 10 characters).';
+                  if (v == null || v.trim().length < 20) {
+                  return 'Please provide detailed private information (at least 20 characters).';
+                }
                   }
                   return null;
                 },
@@ -116,7 +116,8 @@ class _ClaimSubmissionScreenState extends ConsumerState<ClaimSubmissionScreen> {
                             strokeWidth: 2, color: Colors.white),
                       )
                     : const Icon(Icons.verified_outlined),
-                label: const Text('Submit Claim for Verification'),
+                label: const Text('Submit Secure Claim'),
+                
               ),
             ],
           ),
