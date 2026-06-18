@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Added to update the raw profile
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../data/repositories/auth_repository.dart';
 import '../../../data/models/user_model.dart';
@@ -36,8 +38,27 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> register(String email, String password, String name, String matricNo) async {
     state = const AsyncValue.loading();
     try {
-      final user = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo);
-      state = AsyncValue.data(user);
+      // 1. Create the account via your existing secure repository
+      final userModel = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo);
+      
+      // 2. Grab the raw Firebase User session that was just created
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+
+      if (firebaseUser != null) {
+        // Update the core Firebase Auth display name instantly
+        await firebaseUser.updateDisplayName(name.trim());
+
+        // 3. Sync the extra data to the Firestore 'users' collection
+        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'fullName': name.trim(),
+          'matricNumber': matricNo.trim(),
+          'email': email.trim(),
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      state = AsyncValue.data(userModel);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
     }
