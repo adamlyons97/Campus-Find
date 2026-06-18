@@ -168,15 +168,15 @@ class BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('•••',
+        Text('•••',
             style: TextStyle(
                 color: AppTheme.primary,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1)),
-        const SizedBox(width: 6),
+        SizedBox(width: 6),
         Text('CampusFind',
             style: TextStyle(
                 color: AppTheme.primary,

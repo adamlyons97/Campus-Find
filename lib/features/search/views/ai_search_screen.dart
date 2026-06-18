@@ -37,8 +37,8 @@ class _AiSearchScreenState extends ConsumerState<AiSearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.auto_awesome, size: 20),
             SizedBox(width: 8),
             Text('AI Smart Search'),
@@ -54,8 +54,7 @@ class _AiSearchScreenState extends ConsumerState<AiSearchScreen> {
                 SegmentedButton<String>(
                   segments: const [
                     ButtonSegment(
-                        value: ItemType.found,
-                        label: Text('Search Found')),
+                        value: ItemType.found, label: Text('Search Found')),
                     ButtonSegment(
                         value: ItemType.lost, label: Text('Search Lost')),
                   ],
@@ -69,8 +68,7 @@ class _AiSearchScreenState extends ConsumerState<AiSearchScreen> {
                   maxLines: 3,
                   decoration: const InputDecoration(
                     labelText: 'Describe the item in your own words',
-                    hintText:
-                        'e.g. a black Casio watch with a scratched face, '
+                    hintText: 'e.g. a black Casio watch with a scratched face, '
                         'lost near the library',
                   ),
                   onSubmitted: (_) => _run(),
@@ -132,13 +130,12 @@ class _AiSearchScreenState extends ConsumerState<AiSearchScreen> {
                                   color: Colors.white, fontSize: 11)),
                         ),
                         title: Text(hit.item.title,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold)),
+                            style:
+                                const TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(hit.reason,
                             maxLines: 2, overflow: TextOverflow.ellipsis),
                         trailing: const Icon(Icons.chevron_right),
-                        onTap: () =>
-                            context.push('/item/${hit.item.id}'),
+                        onTap: () => context.push('/item/${hit.item.id}'),
                       ),
                     );
                   },

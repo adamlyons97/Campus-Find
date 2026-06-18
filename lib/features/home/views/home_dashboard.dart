@@ -70,11 +70,11 @@ class HomeDashboard extends ConsumerWidget {
             onTap: () => context.go('/browse'),
           ),
           const SizedBox(height: 24),
-          Row(
+          const Row(
             children: [
-              const SectionLabel('Recently Reported', color: AppTheme.textMuted),
-              const SizedBox(width: 10),
-              const Expanded(child: Divider(color: AppTheme.cardBorder)),
+              SectionLabel('Recently Reported', color: AppTheme.textMuted),
+              SizedBox(width: 10),
+              Expanded(child: Divider(color: AppTheme.cardBorder)),
             ],
           ),
           const SizedBox(height: 14),

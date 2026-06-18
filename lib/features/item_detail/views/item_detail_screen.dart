@@ -1,12 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/firestore_paths.dart';
 import '../../../core/theme.dart';
-import '../../../data/models/item_model.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../claims/views/claim_submission_screen.dart';
 import '../../home/providers/item_list_provider.dart';
@@ -32,9 +30,8 @@ class ItemDetailScreen extends ConsumerWidget {
           }
           final isOwnPost = me?.uid == item.reporterId;
           final isFound = item.type == ItemType.found;
-          final canClaim = isFound &&
-              !isOwnPost &&
-              item.status == ItemStatus.active;
+          final canClaim =
+              isFound && !isOwnPost && item.status == ItemStatus.active;
 
           return SingleChildScrollView(
             child: Column(
@@ -56,9 +53,7 @@ class ItemDetailScreen extends ConsumerWidget {
                         children: [
                           _Pill(
                             text: isFound ? 'FOUND' : 'LOST',
-                            color: isFound
-                                ? AppTheme.success
-                                : AppTheme.danger,
+                            color: isFound ? AppTheme.success : AppTheme.danger,
                           ),
                           const SizedBox(width: 8),
                           _Pill(
@@ -103,14 +98,13 @@ class ItemDetailScreen extends ConsumerWidget {
                           value: DateFormat('d MMM yyyy, HH:mm')
                               .format(item.reportedAt)),
                       if (isFound &&
-                          (item.finderClaimRequestNotes?.isNotEmpty ??
-                              false))
+                          (item.finderClaimRequestNotes?.isNotEmpty ?? false))
                         Padding(
                           padding: const EdgeInsets.only(top: 12),
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppTheme.accent.withOpacity(0.1),
+                              color: AppTheme.accent.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -122,8 +116,7 @@ class ItemDetailScreen extends ConsumerWidget {
                         FilledButton.icon(
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  ClaimSubmissionScreen(item: item),
+                              builder: (_) => ClaimSubmissionScreen(item: item),
                             ),
                           ),
                           icon: const Icon(Icons.verified_outlined),
@@ -181,8 +174,7 @@ class _DetailRow extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill(
-      {required this.text, required this.color, this.outlined = false});
+  const _Pill({required this.text, required this.color, this.outlined = false});
   final String text;
   final Color color;
   final bool outlined;
@@ -192,7 +184,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: outlined ? null : color.withOpacity(0.12),
+        color: outlined ? null : color.withValues(alpha: 0.12),
         border: outlined ? Border.all(color: color) : null,
         borderRadius: BorderRadius.circular(20),
       ),
@@ -211,7 +203,7 @@ class _ResolvedBanner extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppTheme.primary.withOpacity(0.1),
+        color: AppTheme.primary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       child: const Row(
@@ -219,9 +211,9 @@ class _ResolvedBanner extends StatelessWidget {
           Icon(Icons.celebration_outlined, color: AppTheme.primary),
           SizedBox(width: 10),
           Expanded(
-              child: Text(
-                  'This item has been reunited with its rightful owner. '
-                  'Alhamdulillah.')),
+              child:
+                  Text('This item has been reunited with its rightful owner. '
+                      'Alhamdulillah.')),
         ],
       ),
     );

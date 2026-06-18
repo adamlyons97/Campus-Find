@@ -48,18 +48,17 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
     if (!_formKey.currentState!.validate()) return;
     final category = _category ?? categories.first;
 
-    final result =
-        await ref.read(createPostControllerProvider.notifier).submit(
-              title: _title.text,
-              description: _description.text,
-              type: _type,
-              category: category,
-              locationName: _locationName.text,
-              locationDetails: _locationDetails.text,
-              image: _image,
-              finderClaimRequestNotes:
-                  _type == ItemType.found ? _finderNotes.text : null,
-            );
+    final result = await ref.read(createPostControllerProvider.notifier).submit(
+          title: _title.text,
+          description: _description.text,
+          type: _type,
+          category: category,
+          locationName: _locationName.text,
+          locationDetails: _locationDetails.text,
+          image: _image,
+          finderClaimRequestNotes:
+              _type == ItemType.found ? _finderNotes.text : null,
+        );
 
     if (!mounted) return;
     final state = ref.read(createPostControllerProvider);
@@ -86,8 +85,8 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
     await showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Row(
-          children: const [
+        title: const Row(
+          children: [
             Icon(Icons.auto_awesome, color: AppTheme.accent),
             SizedBox(width: 8),
             Text('Possible Matches'),
@@ -162,8 +161,7 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
                           icon: Icon(Icons.volunteer_activism_outlined)),
                     ],
                     selected: {_type},
-                    onSelectionChanged: (s) =>
-                        setState(() => _type = s.first),
+                    onSelectionChanged: (s) => setState(() => _type = s.first),
                   ),
                   const SizedBox(height: 20),
                   if (_type == ItemType.found)
@@ -171,11 +169,11 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
                       margin: const EdgeInsets.only(bottom: 16),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppTheme.accent.withOpacity(0.12),
+                        color: AppTheme.accent.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Row(
-                        children: const [
+                      child: const Row(
+                        children: [
                           Icon(Icons.info_outline, color: AppTheme.accent),
                           SizedBox(width: 10),
                           Expanded(
@@ -204,14 +202,14 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
                         Validators.requiredField(v, field: 'Description'),
                   ),
                   DropdownButtonFormField<CategoryModel>(
-                    value: _category,
+                    initialValue: _category,
                     decoration: const InputDecoration(
                       labelText: 'Category',
                       prefixIcon: Icon(Icons.category_outlined),
                     ),
                     items: categories
-                        .map((c) => DropdownMenuItem(
-                            value: c, child: Text(c.name)))
+                        .map((c) =>
+                            DropdownMenuItem(value: c, child: Text(c.name)))
                         .toList(),
                     onChanged: (c) => setState(() => _category = c),
                   ),
@@ -239,9 +237,8 @@ class _CreateItemFormState extends ConsumerState<CreateItemForm> {
                     ),
                   const SizedBox(height: 8),
                   FilledButton.icon(
-                    onPressed: state.isLoading
-                        ? null
-                        : () => _submit(categories),
+                    onPressed:
+                        state.isLoading ? null : () => _submit(categories),
                     icon: state.isLoading
                         ? const SizedBox(
                             height: 20,

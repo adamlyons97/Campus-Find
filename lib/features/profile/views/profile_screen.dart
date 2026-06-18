@@ -74,8 +74,7 @@ class ProfileScreen extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
             children: [
-              const Align(
-                  alignment: Alignment.centerRight, child: BrandMark()),
+              const Align(alignment: Alignment.centerRight, child: BrandMark()),
               const SizedBox(height: 8),
               const SectionLabel('My Account'),
               const SizedBox(height: 4),
@@ -89,7 +88,9 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              _IdentityCard(user: user, initials: _initials(user.name),
+              _IdentityCard(
+                  user: user,
+                  initials: _initials(user.name),
                   roleLabel: _roleLabel(user.role)),
               const SizedBox(height: 16),
               Row(
@@ -215,8 +216,8 @@ class _IdentityCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   user.email,
-                  style: const TextStyle(
-                      fontSize: 13, color: AppTheme.textMuted),
+                  style:
+                      const TextStyle(fontSize: 13, color: AppTheme.textMuted),
                 ),
                 const SizedBox(height: 8),
                 Container(
@@ -317,8 +318,9 @@ class _MenuTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                  color:
-                      highlight ? AppTheme.primary.withOpacity(0.25) : AppTheme.cardBorder),
+                  color: highlight
+                      ? AppTheme.primary.withValues(alpha: 0.25)
+                      : AppTheme.cardBorder),
             ),
             child: Row(
               children: [

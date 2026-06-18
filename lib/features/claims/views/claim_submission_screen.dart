@@ -17,8 +17,7 @@ class ClaimSubmissionScreen extends ConsumerStatefulWidget {
       _ClaimSubmissionScreenState();
 }
 
-class _ClaimSubmissionScreenState
-    extends ConsumerState<ClaimSubmissionScreen> {
+class _ClaimSubmissionScreenState extends ConsumerState<ClaimSubmissionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _proof = TextEditingController();
 
@@ -70,11 +69,11 @@ class _ClaimSubmissionScreenState
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.08),
+                  color: AppTheme.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: const [
+                child: const Row(
+                  children: [
                     Icon(Icons.shield_outlined, color: AppTheme.primary),
                     SizedBox(width: 10),
                     Expanded(
