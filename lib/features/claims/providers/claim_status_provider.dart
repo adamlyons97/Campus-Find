@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../data/models/claim_model.dart';
-import '../../../data/repositories/auth_repository.dart';
 import '../../../data/repositories/claim_repository.dart';
 
 /// Pending claims awaiting verification (verifier dashboard).
@@ -32,7 +32,7 @@ class ClaimController extends AutoDisposeAsyncNotifier<void> {
     required String reporterId,
     required String proofOfOwnership,
   }) async {
-    final auth = ref.read(authRepositoryProvider).currentUser;
+    final auth = FirebaseAuth.instance.currentUser;
     if (auth == null) {
       state = AsyncError('Not signed in', StackTrace.current);
       return false;

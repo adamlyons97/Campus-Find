@@ -30,11 +30,11 @@ class _ClaimSubmissionScreenState extends ConsumerState<ClaimSubmissionScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     final ok = await ref.read(claimControllerProvider.notifier).submit(
-          itemId: widget.item.id,
-          itemTitle: widget.item.title,
-          reporterId: widget.item.reporterId,
-          proofOfOwnership: _proof.text,
-        );
+        itemId: widget.item.itemId,
+        itemTitle: widget.item.title,
+        reporterId: widget.item.reportedBy,
+        proofOfOwnership: _proof.text,
+      );
     if (!mounted) return;
     if (ok) {
       ScaffoldMessenger.of(context).showSnackBar(

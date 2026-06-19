@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:url_launcher/url_launcher.dart'; 
 import '../../../data/models/item_model.dart';
+import '../../claims/views/claim_submission_screen.dart';
 
 // 1. Provider to fetch the specific item
 final specificItemProvider = FutureProvider.family<ItemModel?, String>((ref, itemId) async {
@@ -227,7 +228,16 @@ class ItemDetailScreen extends ConsumerWidget {
                                     
                                     // 3. Submit Claim Button
                                     ElevatedButton.icon(
-                                      onPressed: phone.isEmpty ? null : () => _showContactBottomSheet(context, phone, name),
+                                        onPressed: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => ClaimSubmissionScreen(
+                                                item: item,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       icon: const Icon(Icons.handshake),
                                       label: const Text('SUBMIT CLAIM PROCESS', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                                       style: ElevatedButton.styleFrom(
