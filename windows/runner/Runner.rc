@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-            VALUE "FileDescription", "campusfind" "\0"
+            VALUE "FileDescription", "campus_find" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "campusfind" "\0"
+            VALUE "InternalName", "campus_find" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "campusfind.exe" "\0"
-            VALUE "ProductName", "campusfind" "\0"
+            VALUE "OriginalFilename", "campus_find.exe" "\0"
+            VALUE "ProductName", "campus_find" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

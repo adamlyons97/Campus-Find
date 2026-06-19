@@ -41,50 +41,46 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBCb1tF1a5dKTA2OeTYluynzhWXTw7TtNI',
-    appId: '1:482708196126:web:d6b9e0338b8a451f3c970f',
-    messagingSenderId: '482708196126',
-    projectId: 'campusfind-14d86',
-    authDomain: 'campusfind-14d86.firebaseapp.com',
-    storageBucket: 'campusfind-14d86.firebasestorage.app',
-    measurementId: 'G-N40N28CB6B',
+    apiKey: 'AIzaSyDjlQNZRVpQeDD5nP6c4AfhwYurTJFlt7s',
+    appId: '1:769376703725:web:1079a16be9588bf63068e4',
+    messagingSenderId: '769376703725',
+    projectId: 'campusfind-c7061',
+    authDomain: 'campusfind-c7061.firebaseapp.com',
+    storageBucket: 'campusfind-c7061.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCaPEL2-cSmgIsY4yjRNSh6YI3khiO4BSw',
-    appId: '1:482708196126:android:3546a3ff92e981da3c970f',
-    messagingSenderId: '482708196126',
-    projectId: 'campusfind-14d86',
-    storageBucket: 'campusfind-14d86.firebasestorage.app',
+    apiKey: 'AIzaSyCnGAOuqm7ADXPIDCF51weBEgJpWvD36Kw',
+    appId: '1:769376703725:android:b0d6d759063f94193068e4',
+    messagingSenderId: '769376703725',
+    projectId: 'campusfind-c7061',
+    storageBucket: 'campusfind-c7061.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyAKm_oS2T8L8Fzrxy6ScnkfbDxr_dlolsA',
-    appId: '1:482708196126:ios:75dba905ede6f3c73c970f',
-    messagingSenderId: '482708196126',
-    projectId: 'campusfind-14d86',
-    storageBucket: 'campusfind-14d86.firebasestorage.app',
-    iosClientId: '482708196126-g29k5p9i7hrh4vh0p0cbvkeehb54gpc1.apps.googleusercontent.com',
-    iosBundleId: 'com.example.campusfind',
+    apiKey: 'AIzaSyCRfsJvKxR1ST1_-tpZbXINNHAwQF94YbE',
+    appId: '1:769376703725:ios:6d206a7abe1104af3068e4',
+    messagingSenderId: '769376703725',
+    projectId: 'campusfind-c7061',
+    storageBucket: 'campusfind-c7061.firebasestorage.app',
+    iosBundleId: 'com.example.campusFind',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyAKm_oS2T8L8Fzrxy6ScnkfbDxr_dlolsA',
-    appId: '1:482708196126:ios:75dba905ede6f3c73c970f',
-    messagingSenderId: '482708196126',
-    projectId: 'campusfind-14d86',
-    storageBucket: 'campusfind-14d86.firebasestorage.app',
-    iosClientId: '482708196126-g29k5p9i7hrh4vh0p0cbvkeehb54gpc1.apps.googleusercontent.com',
-    iosBundleId: 'com.example.campusfind',
+    apiKey: 'AIzaSyCRfsJvKxR1ST1_-tpZbXINNHAwQF94YbE',
+    appId: '1:769376703725:ios:6d206a7abe1104af3068e4',
+    messagingSenderId: '769376703725',
+    projectId: 'campusfind-c7061',
+    storageBucket: 'campusfind-c7061.firebasestorage.app',
+    iosBundleId: 'com.example.campusFind',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBCb1tF1a5dKTA2OeTYluynzhWXTw7TtNI',
-    appId: '1:482708196126:web:f1e4a56b0bc56a4a3c970f',
-    messagingSenderId: '482708196126',
-    projectId: 'campusfind-14d86',
-    authDomain: 'campusfind-14d86.firebaseapp.com',
-    storageBucket: 'campusfind-14d86.firebasestorage.app',
-    measurementId: 'G-PW06TC7MXK',
+    apiKey: 'AIzaSyDjlQNZRVpQeDD5nP6c4AfhwYurTJFlt7s',
+    appId: '1:769376703725:web:b9415157806dcd3b3068e4',
+    messagingSenderId: '769376703725',
+    projectId: 'campusfind-c7061',
+    authDomain: 'campusfind-c7061.firebaseapp.com',
+    storageBucket: 'campusfind-c7061.firebasestorage.app',
   );
 }

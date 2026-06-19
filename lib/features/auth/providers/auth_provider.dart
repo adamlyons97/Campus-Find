@@ -1,59 +1,74 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart'; // Added to update the raw profile
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../../data/models/user_model.dart';
 import '../../../data/repositories/auth_repository.dart';
+import '../../../data/models/user_model.dart';
 
-/// Raw Firebase auth state — drives the router redirect.
-final authStateProvider = StreamProvider<User?>(
-  (ref) => ref.watch(authRepositoryProvider).authStateChanges(),
-);
-
-/// The signed-in user's Firestore profile (null while logged out).
-final currentUserProfileProvider = StreamProvider<UserModel?>((ref) {
-  final auth = ref.watch(authStateProvider).valueOrNull;
-  if (auth == null) return Stream.value(null);
-  return ref.watch(authRepositoryProvider).userProfile(auth.uid);
+// Provides a global instance of the AuthRepository
+final authRepositoryProvider = Provider<AuthRepository>((ref) {
+  return AuthRepository();
 });
 
-/// Controller for the login & registration forms. Exposes an [AsyncValue]
-/// so the UI can show loading / error states without manual flags.
-class AuthController extends AutoDisposeAsyncNotifier<void> {
-  @override
-  Future<void> build() async {}
+// Streams the current authentication state (useful for go_router redirects)
+final authStateProvider = StreamProvider((ref) {
+  final authRepository = ref.watch(authRepositoryProvider);
+  return authRepository.authStateChanges;
+});
 
-  AuthRepository get _repo => ref.read(authRepositoryProvider);
+// Manages the loading/error state during the login/registration process
+final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<UserModel?>>((ref) {
+  return AuthController(ref.watch(authRepositoryProvider));
+});
 
-  Future<bool> signIn(String email, String password) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _repo.signIn(email: email, password: password),
-    );
-    return !state.hasError;
+class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
+  final AuthRepository _authRepository;
+
+  AuthController(this._authRepository) : super(const AsyncValue.data(null));
+
+  Future<void> login(String email, String password) async {
+    state = const AsyncValue.loading();
+    try {
+      final user = await _authRepository.signInWithEmailAndPassword(email, password);
+      state = AsyncValue.data(user);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
   }
 
-  Future<bool> register({
-    required String name,
-    required String email,
-    required String password,
-    String? mahallahFaculty,
-  }) async {
-    state = const AsyncLoading();
-    state = await AsyncValue.guard(
-      () => _repo.register(
-        name: name,
-        email: email,
-        password: password,
-        mahallahFaculty: mahallahFaculty,
-      ),
-    );
-    return !state.hasError;
+  // NEW: Added phoneNumber to the incoming parameters to match the Sign Up UI
+  Future<void> register(String email, String password, String name, String matricNo, String phoneNumber) async {
+    state = const AsyncValue.loading();
+    try {
+      // 1. Create the account via your existing secure repository
+      final userModel = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo, phoneNumber);
+      
+      // 2. Grab the raw Firebase User session that was just created
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+
+      if (firebaseUser != null) {
+        // Update the core Firebase Auth display name instantly
+        await firebaseUser.updateDisplayName(name.trim());
+
+        // 3. Sync the extra data to the Firestore 'users' collection
+        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
+          'uid': firebaseUser.uid,
+          'fullName': name.trim(),
+          'matricNumber': matricNo.trim(),
+          'email': email.trim(),
+          'phoneNumber': phoneNumber.trim(), // NEW: Saves the mobile number to the database!
+          'role': 'student', // Good practice to explicitly set the default role here
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      state = AsyncValue.data(userModel);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
   }
 
-  Future<void> signOut() => _repo.signOut();
+  Future<void> logout() async {
+    await _authRepository.signOut();
+    state = const AsyncValue.data(null);
+  }
 }
-
-final authControllerProvider =
-    AutoDisposeAsyncNotifierProvider<AuthController, void>(
-  AuthController.new,
-);

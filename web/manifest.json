@@ -1,6 +1,6 @@
 {
-    "name": "campusfind",
-    "short_name": "campusfind",
+    "name": "campus_find",
+    "short_name": "campus_find",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

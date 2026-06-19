@@ -1,30 +1,49 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'app_router.dart';
-import 'core/constants/app_strings.dart';
-import 'core/theme.dart';
-import 'firebase_options.dart';
+// 1. Import the core Firebase engine
+import 'package:firebase_core/firebase_core.dart'; 
+// 2. Import your newly generated keys
+import 'firebase_options.dart'; 
 
-Future<void> main() async {
+import 'app_router.dart';
+
+void main() async {
+  // 3. Ensure Flutter bindings are ready before waking up Firebase
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 4. Boot up Firebase using the correct keys for your device
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const ProviderScope(child: CampusFindApp()));
+
+  runApp(
+    const ProviderScope(
+      child: CampusFindApp(),
+    ),
+  );
 }
 
+// Convert to a ConsumerWidget to allow this root level to read our appRouterProvider
 class CampusFindApp extends ConsumerWidget {
   const CampusFindApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final router = ref.watch(routerProvider);
+    // Read the go_router configuration instance from our provider
+    final router = ref.watch(appRouterProvider);
+
     return MaterialApp.router(
-      title: AppStrings.appName,
+      title: 'CampusFind',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.teal,
+          primary: Colors.teal,
+        ),
+      ),
+      // Bind Flutter's layout engine to our declarative routing parameters
       routerConfig: router,
     );
   }

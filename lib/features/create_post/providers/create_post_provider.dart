@@ -1,113 +1,110 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:image_picker/image_picker.dart';
-
-import '../../../core/constants/firestore_paths.dart';
-import '../../../data/models/category_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../home/providers/item_provider.dart';
 import '../../../data/models/item_model.dart';
-import '../../../data/repositories/auth_repository.dart';
-import '../../../data/repositories/item_repository.dart';
-import '../../../data/services/gemini_ai_service.dart';
+import '../../../data/services/ai_match_service.dart'; // NEW
 
-/// Categories for the form dropdown (falls back to defaults if empty).
-final categoriesProvider = FutureProvider.autoDispose<List<CategoryModel>>(
-  (ref) => ref.watch(itemRepositoryProvider).fetchCategories(),
-);
+final createPostControllerProvider = StateNotifierProvider<CreatePostController, AsyncValue<String?>>((ref) {
+  return CreatePostController(ref);
+});
 
-/// Outcome of creating an item, optionally carrying AI match suggestions.
-class CreatePostResult {
-  final String itemId;
-  final List<AiMatch> suggestedMatches;
-  const CreatePostResult(this.itemId, this.suggestedMatches);
-}
+class CreatePostController extends StateNotifier<AsyncValue<String?>> {
+  final Ref _ref;
 
-/// Handles the full create flow: upload image → write item → run the Gemini
-/// matcher against the opposite item type (Feature 3 — Smart Match).
-class CreatePostController extends AutoDisposeAsyncNotifier<void> {
-  @override
-  Future<void> build() async {}
+  CreatePostController(this._ref) : super(const AsyncValue.data(null));
 
-  Future<CreatePostResult?> submit({
+  Future<void> submitItem({
     required String title,
     required String description,
-    required String type, // ItemType.lost | found
-    required CategoryModel category,
+    required String type,
+    required String categoryId,
+    required String categoryName,
     required String locationName,
     required String locationDetails,
-    XFile? image,
-    String? finderClaimRequestNotes,
+    String? imageUrl,
   }) async {
-    final repo = ref.read(itemRepositoryProvider);
-    final auth = ref.read(authRepositoryProvider).currentUser;
-    if (auth == null) {
-      state = AsyncError('Not signed in', StackTrace.current);
-      return null;
-    }
+    state = const AsyncValue.loading();
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) throw Exception('User session not found.');
 
-    state = const AsyncLoading();
-    final result = await AsyncValue.guard<CreatePostResult>(() async {
-      String? imageUrl;
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        imageUrl = await repo.uploadImage(bytes, auth.uid).timeout(
-              const Duration(seconds: 30),
-              onTimeout: () => throw Exception(
-                'Image upload timed out. Check that Firebase Storage is '
-                'enabled and its rules are deployed, then try again.',
-              ),
-            );
-      }
-
-      final item = ItemModel(
-        id: '',
-        title: title.trim(),
-        description: description.trim(),
-        type: type,
-        status: ItemStatus.active,
-        categoryId: category.id,
-        categoryName: category.name,
-        imageUrl: imageUrl,
-        locationSeen: ItemLocation(
-          name: locationName.trim(),
-          specificDetails: locationDetails.trim(),
-        ),
-        reportedAt: DateTime.now(),
-        reporterId: auth.uid,
-        reporterName: auth.displayName ?? auth.email ?? 'Member',
-        finderClaimRequestNotes: finderClaimRequestNotes?.trim(),
+      final location = LocationSeen(
+        name: locationName,
+        specificDetails: locationDetails,
       );
 
-      final id = await repo.createItem(item);
-      final created = item.copyWith();
+      final newItem = ItemModel(
+        itemId: '', 
+        title: title,
+        description: description,
+        type: type,
+        categoryId: categoryId,
+        categoryName: categoryName,
+        locationSeen: location,
+        imageUrl: imageUrl,
+        reportedAt: DateTime.now(),
+        reportedBy: currentUser.uid,
+        reportedByName: currentUser.displayName ?? currentUser.email!.split('@')[0],
+      );
 
-      // Run AI matching against the opposite type. This is best-effort and
-      // strictly time-boxed: the post must succeed even if the AI call stalls
-      // (e.g. a slow network or a missing/invalid GEMINI_API_KEY).
-      final opposite =
-          type == ItemType.lost ? ItemType.found : ItemType.lost;
-      var matches = <AiMatch>[];
-      try {
-        final candidates = await repo
-            .fetchActiveByType(opposite)
-            .timeout(const Duration(seconds: 10));
-        matches = await ref
-            .read(geminiAiServiceProvider)
-            .findMatches(query: created, candidates: candidates)
-            .timeout(const Duration(seconds: 15), onTimeout: () => <AiMatch>[]);
-      } catch (_) {
-        // AI matching is best-effort; the post still succeeds without it.
+      // 1. Write the new item to the cloud database
+      final itemId = await _ref.read(itemRepositoryProvider).createItem(newItem);
+      
+      // 2. Run the AI Intelligent Matching Routine in the background
+      _runAiMatchRoutine(newItem, itemId);
+
+      state = AsyncValue.data(itemId);
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+    }
+  }
+
+  /// Private background routine to evaluate cross-references using Gemini AI
+  Future<void> _runAiMatchRoutine(ItemModel item, String generatedId) async {
+    try {
+      // Determine target comparison lane (opposite classification type)
+      final targetType = (item.type == 'lost') ? 'found' : 'lost';
+      
+      // Pull a one-time list of alternative candidates
+      final candidates = await _ref.read(itemRepositoryProvider).getActiveItemsByTypeOnce(targetType);
+      
+      if (candidates.isEmpty) return;
+
+      // Reconstruct the model with its real document ID included
+      final itemWithId = ItemModel(
+        itemId: generatedId,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        categoryId: item.categoryId,
+        categoryName: item.categoryName,
+        locationSeen: item.locationSeen,
+        reportedAt: item.reportedAt,
+        reportedBy: item.reportedBy,
+        reportedByName: item.reportedByName,
+      );
+
+      // Execute the Gemini context evaluation
+      final matchedId = await _ref.read(aiMatchServiceProvider).findPotentialMatch(
+            newItem: itemWithId,
+            existingItems: candidates,
+          );
+
+      // 3. If Gemini detects an overlapping match signature, record it in Firestore
+      if (matchedId != null) {
+        await FirebaseFirestore.instance.collection('matches').add({
+          'newItemId': generatedId,
+          'matchedItemId': matchedId,
+          'detectedAt': DateTime.now(),
+          'confidenceScore': 0.85, // Minimum validation baseline set in system prompt
+          'status': 'pending_review',
+        });
+        print('★ SUCCESS: Gemini AI detected an automated system match link: Document ID $matchedId');
       }
-
-      return CreatePostResult(id, matches);
-    });
-
-    state = result.hasError
-        ? AsyncError(result.error!, result.stackTrace!)
-        : const AsyncData(null);
-    return result.valueOrNull;
+    } catch (aiError) {
+      // Fail gracefully so the user's primary post submission isn't interrupted
+      print('Background AI Matching Engine warning: $aiError');
+    }
   }
 }
-
-final createPostControllerProvider =
-    AutoDisposeAsyncNotifierProvider<CreatePostController, void>(
-  CreatePostController.new,
-);

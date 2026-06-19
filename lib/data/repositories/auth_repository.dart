@@ -1,128 +1,73 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-import '../../core/constants/app_strings.dart';
-import '../../core/constants/firestore_paths.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
-import '../services/firebase_service.dart';
 
-/// Encapsulates authentication (Feature 1 — Authentication Hub) and the
-/// user profile document in Firestore.
 class AuthRepository {
-  AuthRepository(this._auth, this._db);
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  final FirebaseAuth _auth;
-  final FirebaseFirestore _db;
+  // Stream to listen to auth state changes (logged in vs logged out)
+  Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Stream<User?> authStateChanges() => _auth.authStateChanges();
-  User? get currentUser => _auth.currentUser;
+  // Helper method to validate the university domain
+  bool _isValidIIUMEmail(String email) {
+    return email.trim().toLowerCase().endsWith('@live.iium.edu.my');
+  }
 
-  CollectionReference<Map<String, dynamic>> get _users =>
-      _db.collection(FirestorePaths.users);
-
-  /// Throws [AuthException] with a friendly message on failure.
-  Future<UserModel> signIn({
-    required String email,
-    required String password,
-  }) async {
-    _assertUniversityEmail(email);
+  /// Logs in an existing user
+  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
     try {
-      final cred = await _auth.signInWithEmailAndPassword(
-        email: email.trim(),
+      if (!_isValidIIUMEmail(email)) {
+        throw Exception('Only @live.iium.edu.my emails are authorized.');
+      }
+      
+      UserCredential credential = await _auth.signInWithEmailAndPassword(
+        email: email,
         password: password,
       );
-      return _fetchOrThrow(cred.user!.uid);
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_mapError(e));
+      
+      return await getUserData(credential.user!.uid);
+    } catch (e) {
+      throw Exception(e.toString());
     }
   }
 
-  Future<UserModel> register({
-    required String name,
-    required String email,
-    required String password,
-    String? mahallahFaculty,
-  }) async {
-    _assertUniversityEmail(email);
+  /// Registers a new user and creates their Firestore profile
+  // 1. Add String phoneNumber to the function parameters here:
+  Future<UserModel?> registerWithEmailAndPassword(String email, String password, String name, String matricNo, String phoneNumber) async {
     try {
-      final cred = await _auth.createUserWithEmailAndPassword(
-        email: email.trim(),
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
         password: password,
       );
-      final user = UserModel(
-        uid: cred.user!.uid,
-        name: name.trim(),
-        email: email.trim(),
-        role: UserRole.student,
+
+      // 2. Add phoneNumber to the UserModel creation here:
+      UserModel newUser = UserModel(
+        uid: userCredential.user!.uid,
+        name: name,
+        email: email,
+        role: 'student',
         joinedAt: DateTime.now(),
-        mahallahFaculty: mahallahFaculty?.trim(),
+        phoneNumber: phoneNumber, // <--- ADD THIS LINE
       );
-      await _users.doc(user.uid).set(user.toMap());
-      return user;
-    } on FirebaseAuthException catch (e) {
-      throw AuthException(_mapError(e));
+
+      return newUser;
+    } catch (e) {
+      rethrow;
     }
   }
 
-  Future<void> signOut() => _auth.signOut();
-
-  /// Streams the profile document for the signed-in user.
-  Stream<UserModel?> userProfile(String uid) =>
-      _users.doc(uid).snapshots().map(
-            (doc) => doc.exists ? UserModel.fromDoc(doc) : null,
-          );
-
-  Future<UserModel> _fetchOrThrow(String uid) async {
-    final doc = await _users.doc(uid).get();
-    if (!doc.exists) {
-      throw const AuthException('Profile not found. Please contact support.');
+  /// Fetches the user's profile from Firestore
+  Future<UserModel?> getUserData(String uid) async {
+    DocumentSnapshot doc = await _firestore.collection('users').doc(uid).get();
+    if (doc.exists) {
+      return UserModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
     }
-    return UserModel.fromDoc(doc);
+    return null;
   }
 
-  void _assertUniversityEmail(String email) {
-    final lower = email.trim().toLowerCase();
-    final ok = AppStrings.allowedEmailDomains
-        .any((domain) => lower.endsWith('@$domain'));
-    if (!ok) {
-      throw AuthException(
-        'Please use your university email '
-        '(${AppStrings.allowedEmailDomains.map((d) => '@$d').join(', ')}).',
-      );
-    }
-  }
-
-  String _mapError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'invalid-email':
-        return 'That email address looks invalid.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'Incorrect email or password.';
-      case 'email-already-in-use':
-        return 'An account already exists for that email.';
-      case 'weak-password':
-        return 'Please choose a stronger password (min 6 characters).';
-      default:
-        return e.message ?? 'Authentication failed. Please try again.';
-    }
+  /// Logs the user out
+  Future<void> signOut() async {
+    await _auth.signOut();
   }
 }
-
-class AuthException implements Exception {
-  final String message;
-  const AuthException(this.message);
-  @override
-  String toString() => message;
-}
-
-final authRepositoryProvider = Provider<AuthRepository>(
-  (ref) => AuthRepository(
-    ref.watch(firebaseAuthProvider),
-    ref.watch(firestoreProvider),
-  ),
-);

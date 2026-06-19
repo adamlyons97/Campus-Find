@@ -1,22 +1,19 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-import '../../core/constants/firestore_paths.dart';
-
-/// Mirrors `/users/{uid}` (Section 9.2.A).
 class UserModel {
   final String uid;
   final String name;
   final String email;
-  final String role;
+  final String phoneNumber; // NEW FIELD
+  final String role; 
   final DateTime joinedAt;
   final String? mahallahFaculty;
   final int totalItemsReported;
   final int totalItemsReunited;
 
-  const UserModel({
+  UserModel({
     required this.uid,
     required this.name,
     required this.email,
+    required this.phoneNumber, // NEW FIELD
     required this.role,
     required this.joinedAt,
     this.mahallahFaculty,
@@ -24,50 +21,32 @@ class UserModel {
     this.totalItemsReunited = 0,
   });
 
-  bool get isVerifier => UserRole.verifiers.contains(role);
-
-  factory UserModel.fromMap(String uid, Map<String, dynamic> map) {
+  factory UserModel.fromMap(Map<String, dynamic> map, String documentId) {
     return UserModel(
-      uid: uid,
-      name: map['name'] as String? ?? '',
-      email: map['email'] as String? ?? '',
-      role: map['role'] as String? ?? UserRole.student,
-      joinedAt: (map['joinedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-      mahallahFaculty: map['mahallah_faculty'] as String?,
-      totalItemsReported: (map['totalItemsReported'] as num?)?.toInt() ?? 0,
-      totalItemsReunited: (map['totalItemsReunited'] as num?)?.toInt() ?? 0,
+      uid: documentId,
+      name: map['name'] ?? '',
+      email: map['email'] ?? '',
+      phoneNumber: map['phoneNumber'] ?? '', // NEW FIELD
+      role: map['role'] ?? 'student',
+      joinedAt: map['joinedAt'] != null 
+          ? (map['joinedAt'] as dynamic).toDate() 
+          : DateTime.now(),
+      mahallahFaculty: map['mahallah_faculty'],
+      totalItemsReported: map['totalItemsReported']?.toInt() ?? 0,
+      totalItemsReunited: map['totalItemsReunited']?.toInt() ?? 0,
     );
   }
 
-  factory UserModel.fromDoc(DocumentSnapshot<Map<String, dynamic>> doc) =>
-      UserModel.fromMap(doc.id, doc.data() ?? {});
-
-  Map<String, dynamic> toMap() => {
-        'name': name,
-        'email': email,
-        'role': role,
-        'joinedAt': Timestamp.fromDate(joinedAt),
-        'mahallah_faculty': mahallahFaculty,
-        'totalItemsReported': totalItemsReported,
-        'totalItemsReunited': totalItemsReunited,
-      };
-
-  UserModel copyWith({
-    String? name,
-    String? role,
-    String? mahallahFaculty,
-    int? totalItemsReported,
-    int? totalItemsReunited,
-  }) {
-    return UserModel(
-      uid: uid,
-      name: name ?? this.name,
-      email: email,
-      role: role ?? this.role,
-      joinedAt: joinedAt,
-      mahallahFaculty: mahallahFaculty ?? this.mahallahFaculty,
-      totalItemsReported: totalItemsReported ?? this.totalItemsReported,
-      totalItemsReunited: totalItemsReunited ?? this.totalItemsReunited,
-    );
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'email': email,
+      'phoneNumber': phoneNumber, // NEW FIELD
+      'role': role,
+      'joinedAt': joinedAt,
+      'mahallah_faculty': mahallahFaculty,
+      'totalItemsReported': totalItemsReported,
+      'totalItemsReunited': totalItemsReunited,
+    };
   }
 }

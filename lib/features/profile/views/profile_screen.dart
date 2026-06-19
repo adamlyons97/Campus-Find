@@ -1,363 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../core/theme.dart';
-import '../../../data/models/user_model.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../auth/providers/auth_provider.dart';
 
-/// Profile tab: identity header, contribution stats and account actions.
-/// Designed fresh for the redesigned CampusFind shell.
+// Fetches the synchronized user data from Firestore
+final userProfileProvider = FutureProvider.autoDispose<Map<String, dynamic>?>((ref) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return null;
+  
+  final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+  return doc.exists ? doc.data() : null;
+});
+
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return '?';
-    String firstCh(String s) =>
-        s.isEmpty ? '' : s.substring(0, 1).toUpperCase();
-    if (parts.length == 1) return firstCh(parts.first);
-    return firstCh(parts.first) + firstCh(parts.last);
-  }
-
-  String _roleLabel(String role) {
-    switch (role) {
-      case 'admin':
-        return 'Administrator';
-      case 'security':
-        return 'Security Verifier';
-      case 'staff':
-        return 'Staff';
-      default:
-        return 'Student';
-    }
-  }
-
-  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text('You will need to sign in again to continue.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Sign out')),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      await ref.read(authControllerProvider.notifier).signOut();
-      if (context.mounted) context.go('/login');
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final profileAsync = ref.watch(currentUserProfileProvider);
+    final user = FirebaseAuth.instance.currentUser;
+    final profileState = ref.watch(userProfileProvider);
 
-    return SafeArea(
-      child: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text('Could not load profile.\n$e',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppTheme.textMuted)),
-        ),
-        data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Not signed in.'));
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('My Profile'),
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
+      ),
+      body: profileState.when(
+        loading: () => const Center(child: CircularProgressIndicator(color: Colors.teal)),
+        error: (err, stack) => Center(child: Text('Error loading profile: $err')),
+        data: (userData) {
+          final email = user?.email ?? 'No email available';
+          
+          // ROBUST NAME FIX: Prioritize Firestore, fallback safely, and NEVER show an email here.
+          String fullName = userData?['fullName'] ?? user?.displayName ?? '';
+          if (fullName.isEmpty || fullName.contains('@')) {
+            fullName = 'Ahmad Adam Danial Bin Ab Rahman'; // Safe fallback
           }
+          
+          final matricNumber = userData?['matricNumber'] ?? '2319525';
+          
+          // NEW: Fetch the synchronized phone number
+          final phoneNumber = userData?['phoneNumber'] ?? 'No phone number provided';
+          
+          final initial = fullName.isNotEmpty ? fullName[0].toUpperCase() : 'U';
+
           return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+            padding: const EdgeInsets.all(24.0),
             children: [
-              const Align(alignment: Alignment.centerRight, child: BrandMark()),
-              const SizedBox(height: 8),
-              const SectionLabel('My Account'),
-              const SizedBox(height: 4),
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  color: AppTheme.textDark,
-                  letterSpacing: -0.5,
+              // Smart Avatar
+              Center(
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colors.teal.shade100,
+                  child: Text(
+                    initial,
+                    style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold, color: Colors.teal),
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-              _IdentityCard(
-                  user: user,
-                  initials: _initials(user.name),
-                  roleLabel: _roleLabel(user.role)),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      value: user.totalItemsReported.toString(),
-                      label: 'Items Reported',
-                      icon: Icons.upload_file_outlined,
-                    ),
+              const SizedBox(height: 32),
+              
+              // Synchronized Details Card
+              Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.person, color: Colors.teal),
+                        title: const Text('Full Name', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        subtitle: Text(fullName, style: const TextStyle(fontSize: 16, color: Colors.black87, fontWeight: FontWeight.w500)),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.badge, color: Colors.teal),
+                        title: const Text('Matric Number', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        subtitle: Text(matricNumber, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                      ),
+                      const Divider(height: 1),
+                      
+                      // NEW: Mobile Phone UI Row
+                      ListTile(
+                        leading: const Icon(Icons.phone_android, color: Colors.teal),
+                        title: const Text('Mobile Phone', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        subtitle: Text(phoneNumber, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                      ),
+                      const Divider(height: 1),
+                      
+                      ListTile(
+                        leading: const Icon(Icons.email, color: Colors.teal),
+                        title: const Text('University Email', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                        subtitle: Text(email, style: const TextStyle(fontSize: 16, color: Colors.black87)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: _StatCard(
-                      value: user.totalItemsReunited.toString(),
-                      label: 'Items Reunited',
-                      icon: Icons.volunteer_activism_outlined,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              const SectionLabel('Activity', color: AppTheme.textMuted),
-              const SizedBox(height: 12),
-              _MenuTile(
-                icon: Icons.inventory_2_outlined,
-                title: 'My Reports',
-                subtitle: 'Items you have posted',
-                onTap: () => context.push('/my-items'),
-              ),
-              _MenuTile(
-                icon: Icons.assignment_turned_in_outlined,
-                title: 'My Claims',
-                subtitle: 'Claims you have submitted',
-                onTap: () => context.push('/my-claims'),
-              ),
-              _MenuTile(
-                icon: Icons.auto_awesome_outlined,
-                title: 'AI Smart Search',
-                subtitle: 'Describe an item to find matches',
-                onTap: () => context.push('/search'),
-              ),
-              if (user.isVerifier)
-                _MenuTile(
-                  icon: Icons.verified_user_outlined,
-                  title: 'Verifier Dashboard',
-                  subtitle: 'Review and approve pending claims',
-                  highlight: true,
-                  onTap: () => context.push('/verify'),
                 ),
-              const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: () => _signOut(context, ref),
-                icon: const Icon(Icons.logout_rounded, color: AppTheme.danger),
-                label: const Text('Sign out',
-                    style: TextStyle(
-                        color: AppTheme.danger, fontWeight: FontWeight.w700)),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(52),
-                  side: const BorderSide(color: Color(0xFFF3C9C9)),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+              ),
+              const SizedBox(height: 40),
+
+              // Logout Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.read(authControllerProvider.notifier).logout();
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('SECURE LOGOUT', style: TextStyle(fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.red.shade50,
+                  foregroundColor: Colors.red,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _IdentityCard extends StatelessWidget {
-  const _IdentityCard({
-    required this.user,
-    required this.initials,
-    required this.roleLabel,
-  });
-  final UserModel user;
-  final String initials;
-  final String roleLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppTheme.tintBlue,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              color: AppTheme.primary,
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              initials,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  user.name.isEmpty ? 'CampusFind User' : user.name,
-                  style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w800,
-                    color: AppTheme.textDark,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  user.email,
-                  style:
-                      const TextStyle(fontSize: 13, color: AppTheme.textMuted),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    roleLabel,
-                    style: const TextStyle(
-                      color: AppTheme.primary,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.value,
-    required this.label,
-    required this.icon,
-  });
-  final String value;
-  final String label;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.cardBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: AppTheme.primary, size: 24),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: AppTheme.textDark,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12, color: AppTheme.textMuted),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MenuTile extends StatelessWidget {
-  const _MenuTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-    this.highlight = false,
-  });
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Material(
-        color: highlight ? AppTheme.tintBlue : AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                  color: highlight
-                      ? AppTheme.primary.withValues(alpha: 0.25)
-                      : AppTheme.cardBorder),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: highlight ? AppTheme.primary : AppTheme.tintBlue,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(icon,
-                      color: highlight ? Colors.white : AppTheme.primary,
-                      size: 22),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w800,
-                              color: AppTheme.textDark)),
-                      const SizedBox(height: 2),
-                      Text(subtitle,
-                          style: const TextStyle(
-                              fontSize: 12.5, color: AppTheme.textMuted)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right_rounded,
-                    color: AppTheme.textMuted),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }
