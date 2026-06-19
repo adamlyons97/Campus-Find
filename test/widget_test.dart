@@ -1,30 +1,85 @@
-// This is a basic Flutter widget test.
+// Widget tests for CampusFind authentication.
 //
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Tests the LoginScreen form validation rules (IIUM email domain and
+// minimum password length) in isolation, without requiring Firebase.
+// The AuthRepository is overridden with a fake so no live Firebase
+// connection is needed in the test environment.
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-import 'package:campus_find/main.dart';
+import 'package:campus_find/data/repositories/auth_repository.dart';
+import 'package:campus_find/data/models/user_model.dart';
+import 'package:campus_find/features/auth/providers/auth_provider.dart';
+import 'package:campus_find/features/auth/views/login_screen.dart';
+
+// A fake repository so the widget tree never touches live Firebase.
+class FakeAuthRepository implements AuthRepository {
+  @override
+  Stream<User?> get authStateChanges => const Stream.empty();
+
+  @override
+  Future<UserModel?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async => null;
+
+  @override
+  Future<UserModel?> registerWithEmailAndPassword(
+    String email,
+    String password,
+    String name,
+    String matricNo,
+    String phoneNumber,
+  ) async => null;
+
+  @override
+  Future<UserModel?> getUserData(String uid) async => null;
+
+  @override
+  Future<void> signOut() async {}
+}
+
+Widget _wrapLogin() => ProviderScope(
+  overrides: [authRepositoryProvider.overrideWithValue(FakeAuthRepository())],
+  child: const MaterialApp(home: LoginScreen()),
+);
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('LoginScreen rejects a non-IIUM email domain', (tester) async {
+    await tester.pumpWidget(_wrapLogin());
+    await tester.pumpAndSettle();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
-
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'someone@gmail.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+    await tester.tap(find.text('SECURE LOGIN'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(
+      find.text('Must be a valid @live.iium.edu.my domain'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('LoginScreen rejects a password shorter than 6 characters', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_wrapLogin());
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byType(TextFormField).first,
+      'ammar@live.iium.edu.my',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), '123');
+    await tester.tap(find.text('SECURE LOGIN'));
+    await tester.pump();
+
+    expect(find.text('Password too short'), findsOneWidget);
   });
 }
