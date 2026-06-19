@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -21,7 +20,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       if (authState.isLoading) return null;
       final isAuthenticated = authState.valueOrNull != null;
-      final isNavigatingToAuth = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+      final isNavigatingToAuth =
+          state.matchedLocation == '/login' ||
+          state.matchedLocation == '/signup';
 
       if (!isAuthenticated && !isNavigatingToAuth) return '/login';
       if (isAuthenticated && isNavigatingToAuth) return '/home';
@@ -61,7 +62,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           // Extract the IDs from the URL query parameters
           final matchId = state.uri.queryParameters['matchId']!;
           final matchedItemId = state.uri.queryParameters['matchedItemId']!;
-          
+
           return MatchDetailsScreen(
             matchId: matchId,
             matchedItemId: matchedItemId,
