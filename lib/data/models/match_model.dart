@@ -20,8 +20,8 @@ class MatchModel {
       matchId: documentId,
       newItemId: map['newItemId'] ?? '',
       matchedItemId: map['matchedItemId'] ?? '',
-      detectedAt: map['detectedAt'] != null 
-          ? (map['detectedAt'] as dynamic).toDate() 
+      detectedAt: map['detectedAt'] != null
+          ? (map['detectedAt'] as dynamic).toDate()
           : DateTime.now(),
       confidenceScore: (map['confidenceScore'] ?? 0.0).toDouble(),
       status: map['status'] ?? 'pending_review',

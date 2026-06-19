@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/api_constants.dart';
@@ -23,16 +25,19 @@ class AiMatchService {
   }) async {
     if (existingItems.isEmpty) return null;
 
-    final itemsListString = existingItems.map((item) {
-      return '''
+    final itemsListString = existingItems
+        .map((item) {
+          return '''
       ID: ${item.itemId}
       Title: ${item.title}
       Description: ${item.description}
       Location: ${item.locationSeen.name}
       ''';
-    }).join('\n---\n');
+        })
+        .join('\n---\n');
 
-    final prompt = '''
+    final prompt =
+        '''
     You are an intelligent matching assistant for a university Lost & Found app.
     A user just reported a NEW item:
     Type: ${newItem.type}
@@ -63,7 +68,9 @@ class AiMatchService {
       }
 
       // 2. Strip away common extra characters LLMs try to add (quotes, markdown, labels)
-      aiAnswer = aiAnswer.replaceAll(RegExp(r'(ID:|-|\*|`|"|\\|\n|id:)'), '').trim();
+      aiAnswer = aiAnswer
+          .replaceAll(RegExp(r'(ID:|-|\*|`|"|\\|\n|id:)'), '')
+          .trim();
 
       // 3. Extract exactly the alphanumeric Firebase ID (usually 20 characters)
       final idRegex = RegExp(r'[a-zA-Z0-9]{15,30}');
@@ -72,11 +79,15 @@ class AiMatchService {
       if (match != null) {
         return match.group(0); // Safely returns JUST the pure ID
       }
-      
-      return null; 
-      
-    } catch (e) {
-      print('Gemini AI Error: $e');
+
+      return null;
+    } catch (error, stackTrace) {
+      developer.log(
+        'Gemini AI request failed',
+        name: 'campus_find.ai_match',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }

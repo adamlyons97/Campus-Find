@@ -2,26 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // 1. Import the core Firebase engine
-import 'package:firebase_core/firebase_core.dart'; 
+import 'package:firebase_core/firebase_core.dart';
 // 2. Import your newly generated keys
-import 'firebase_options.dart'; 
+import 'firebase_options.dart';
 
 import 'app_router.dart';
 
 void main() async {
   // 3. Ensure Flutter bindings are ready before waking up Firebase
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // 4. Boot up Firebase using the correct keys for your device
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
 
-  runApp(
-    const ProviderScope(
-      child: CampusFindApp(),
-    ),
-  );
+  // 4. Boot up Firebase using the correct keys for your device
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(const ProviderScope(child: CampusFindApp()));
 }
 
 // Convert to a ConsumerWidget to allow this root level to read our appRouterProvider

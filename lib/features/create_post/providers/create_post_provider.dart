@@ -1,13 +1,18 @@
+import 'dart:developer' as developer;
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../home/providers/item_provider.dart';
+import '../../home/providers/storage_provider.dart';
 import '../../../data/models/item_model.dart';
 import '../../../data/services/ai_match_service.dart'; // NEW
 
-final createPostControllerProvider = StateNotifierProvider<CreatePostController, AsyncValue<String?>>((ref) {
-  return CreatePostController(ref);
-});
+final createPostControllerProvider =
+    StateNotifierProvider<CreatePostController, AsyncValue<String?>>((ref) {
+      return CreatePostController(ref);
+    });
 
 class CreatePostController extends StateNotifier<AsyncValue<String?>> {
   final Ref _ref;
@@ -22,12 +27,20 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
     required String categoryName,
     required String locationName,
     required String locationDetails,
-    String? imageUrl,
+    Uint8List? imageBytes,
+    String? imageFileName,
   }) async {
     state = const AsyncValue.loading();
     try {
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) throw Exception('User session not found.');
+
+      String? imageUrl;
+      if (imageBytes != null && imageFileName != null) {
+        imageUrl = await _ref
+            .read(storageProvider)
+            .saveItemImage(imageBytes, currentUser.uid, imageFileName);
+      }
 
       final location = LocationSeen(
         name: locationName,
@@ -35,7 +48,7 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
       );
 
       final newItem = ItemModel(
-        itemId: '', 
+        itemId: '',
         title: title,
         description: description,
         type: type,
@@ -45,12 +58,17 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
         imageUrl: imageUrl,
         reportedAt: DateTime.now(),
         reportedBy: currentUser.uid,
-        reportedByName: currentUser.displayName ?? currentUser.email!.split('@')[0],
+        reportedByName:
+            currentUser.displayName ??
+            currentUser.email?.split('@').first ??
+            'CampusFind user',
       );
 
       // 1. Write the new item to the cloud database
-      final itemId = await _ref.read(itemRepositoryProvider).createItem(newItem);
-      
+      final itemId = await _ref
+          .read(itemRepositoryProvider)
+          .createItem(newItem);
+
       // 2. Run the AI Intelligent Matching Routine in the background
       _runAiMatchRoutine(newItem, itemId);
 
@@ -65,10 +83,12 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
     try {
       // Determine target comparison lane (opposite classification type)
       final targetType = (item.type == 'lost') ? 'found' : 'lost';
-      
+
       // Pull a one-time list of alternative candidates
-      final candidates = await _ref.read(itemRepositoryProvider).getActiveItemsByTypeOnce(targetType);
-      
+      final candidates = await _ref
+          .read(itemRepositoryProvider)
+          .getActiveItemsByTypeOnce(targetType);
+
       if (candidates.isEmpty) return;
 
       // Reconstruct the model with its real document ID included
@@ -83,13 +103,13 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
         reportedAt: item.reportedAt,
         reportedBy: item.reportedBy,
         reportedByName: item.reportedByName,
+        imageUrl: item.imageUrl,
       );
 
       // Execute the Gemini context evaluation
-      final matchedId = await _ref.read(aiMatchServiceProvider).findPotentialMatch(
-            newItem: itemWithId,
-            existingItems: candidates,
-          );
+      final matchedId = await _ref
+          .read(aiMatchServiceProvider)
+          .findPotentialMatch(newItem: itemWithId, existingItems: candidates);
 
       // 3. If Gemini detects an overlapping match signature, record it in Firestore
       if (matchedId != null) {
@@ -97,14 +117,23 @@ class CreatePostController extends StateNotifier<AsyncValue<String?>> {
           'newItemId': generatedId,
           'matchedItemId': matchedId,
           'detectedAt': DateTime.now(),
-          'confidenceScore': 0.85, // Minimum validation baseline set in system prompt
+          'confidenceScore':
+              0.85, // Minimum validation baseline set in system prompt
           'status': 'pending_review',
         });
-        print('★ SUCCESS: Gemini AI detected an automated system match link: Document ID $matchedId');
+        developer.log(
+          'Gemini AI created a match for document $matchedId',
+          name: 'campus_find.create_post',
+        );
       }
-    } catch (aiError) {
+    } catch (error, stackTrace) {
       // Fail gracefully so the user's primary post submission isn't interrupted
-      print('Background AI Matching Engine warning: $aiError');
+      developer.log(
+        'Background AI matching failed',
+        name: 'campus_find.create_post',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 }

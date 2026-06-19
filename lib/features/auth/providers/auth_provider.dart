@@ -16,9 +16,10 @@ final authStateProvider = StreamProvider((ref) {
 });
 
 // Manages the loading/error state during the login/registration process
-final authControllerProvider = StateNotifierProvider<AuthController, AsyncValue<UserModel?>>((ref) {
-  return AuthController(ref.watch(authRepositoryProvider));
-});
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AsyncValue<UserModel?>>((ref) {
+      return AuthController(ref.watch(authRepositoryProvider));
+    });
 
 class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   final AuthRepository _authRepository;
@@ -28,7 +29,10 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   Future<void> login(String email, String password) async {
     state = const AsyncValue.loading();
     try {
-      final user = await _authRepository.signInWithEmailAndPassword(email, password);
+      final user = await _authRepository.signInWithEmailAndPassword(
+        email,
+        password,
+      );
       state = AsyncValue.data(user);
     } catch (e, stackTrace) {
       state = AsyncValue.error(e, stackTrace);
@@ -36,12 +40,24 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
   }
 
   // NEW: Added phoneNumber to the incoming parameters to match the Sign Up UI
-  Future<void> register(String email, String password, String name, String matricNo, String phoneNumber) async {
+  Future<void> register(
+    String email,
+    String password,
+    String name,
+    String matricNo,
+    String phoneNumber,
+  ) async {
     state = const AsyncValue.loading();
     try {
       // 1. Create the account via your existing secure repository
-      final userModel = await _authRepository.registerWithEmailAndPassword(email, password, name, matricNo, phoneNumber);
-      
+      final userModel = await _authRepository.registerWithEmailAndPassword(
+        email,
+        password,
+        name,
+        matricNo,
+        phoneNumber,
+      );
+
       // 2. Grab the raw Firebase User session that was just created
       final firebaseUser = FirebaseAuth.instance.currentUser;
 
@@ -50,15 +66,20 @@ class AuthController extends StateNotifier<AsyncValue<UserModel?>> {
         await firebaseUser.updateDisplayName(name.trim());
 
         // 3. Sync the extra data to the Firestore 'users' collection
-        await FirebaseFirestore.instance.collection('users').doc(firebaseUser.uid).set({
-          'uid': firebaseUser.uid,
-          'fullName': name.trim(),
-          'matricNumber': matricNo.trim(),
-          'email': email.trim(),
-          'phoneNumber': phoneNumber.trim(), // NEW: Saves the mobile number to the database!
-          'role': 'student', // Good practice to explicitly set the default role here
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(firebaseUser.uid)
+            .set({
+              'uid': firebaseUser.uid,
+              'fullName': name.trim(),
+              'matricNumber': matricNo.trim(),
+              'email': email.trim(),
+              'phoneNumber': phoneNumber
+                  .trim(), // NEW: Saves the mobile number to the database!
+              'role':
+                  'student', // Good practice to explicitly set the default role here
+              'createdAt': FieldValue.serverTimestamp(),
+            });
       }
 
       state = AsyncValue.data(userModel);

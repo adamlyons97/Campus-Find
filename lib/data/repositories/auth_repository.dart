@@ -15,17 +15,20 @@ class AuthRepository {
   }
 
   /// Logs in an existing user
-  Future<UserModel?> signInWithEmailAndPassword(String email, String password) async {
+  Future<UserModel?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
     try {
       if (!_isValidIIUMEmail(email)) {
         throw Exception('Only @live.iium.edu.my emails are authorized.');
       }
-      
+
       UserCredential credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       return await getUserData(credential.user!.uid);
     } catch (e) {
       throw Exception(e.toString());
@@ -34,12 +37,16 @@ class AuthRepository {
 
   /// Registers a new user and creates their Firestore profile
   // 1. Add String phoneNumber to the function parameters here:
-  Future<UserModel?> registerWithEmailAndPassword(String email, String password, String name, String matricNo, String phoneNumber) async {
+  Future<UserModel?> registerWithEmailAndPassword(
+    String email,
+    String password,
+    String name,
+    String matricNo,
+    String phoneNumber,
+  ) async {
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       // 2. Add phoneNumber to the UserModel creation here:
       UserModel newUser = UserModel(

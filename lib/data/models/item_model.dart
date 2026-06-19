@@ -12,10 +12,7 @@ class LocationSeen {
   }
 
   Map<String, dynamic> toMap() {
-    return {
-      'name': name,
-      'specificDetails': specificDetails,
-    };
+    return {'name': name, 'specificDetails': specificDetails};
   }
 }
 
@@ -63,8 +60,8 @@ class ItemModel {
       categoryName: map['categoryName'] ?? '',
       imageUrl: map['imageUrl'],
       locationSeen: LocationSeen.fromMap(map['locationSeen'] ?? {}),
-      reportedAt: map['reportedAt'] != null 
-          ? (map['reportedAt'] as dynamic).toDate() 
+      reportedAt: map['reportedAt'] != null
+          ? (map['reportedAt'] as dynamic).toDate()
           : DateTime.now(),
       reportedBy: map['reportedBy'] ?? '',
       reportedByName: map['reportedByName'] ?? '',

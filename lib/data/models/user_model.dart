@@ -3,7 +3,7 @@ class UserModel {
   final String name;
   final String email;
   final String phoneNumber; // NEW FIELD
-  final String role; 
+  final String role;
   final DateTime joinedAt;
   final String? mahallahFaculty;
   final int totalItemsReported;
@@ -28,8 +28,8 @@ class UserModel {
       email: map['email'] ?? '',
       phoneNumber: map['phoneNumber'] ?? '', // NEW FIELD
       role: map['role'] ?? 'student',
-      joinedAt: map['joinedAt'] != null 
-          ? (map['joinedAt'] as dynamic).toDate() 
+      joinedAt: map['joinedAt'] != null
+          ? (map['joinedAt'] as dynamic).toDate()
           : DateTime.now(),
       mahallahFaculty: map['mahallah_faculty'],
       totalItemsReported: map['totalItemsReported']?.toInt() ?? 0,

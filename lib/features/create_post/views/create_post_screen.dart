@@ -1,8 +1,9 @@
-import 'dart:io'; 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart'; 
+import 'package:image_picker/image_picker.dart';
 
 import '../providers/create_post_provider.dart';
 
@@ -19,12 +20,13 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
   final _descriptionController = TextEditingController();
   final _locationNameController = TextEditingController();
   final _locationDetailsController = TextEditingController();
-  
-  String _itemType = 'lost'; 
+
+  String _itemType = 'lost';
   String? _selectedCategoryId;
   String? _selectedCategoryName;
 
-  File? _pickedImage; // Keeps the local image state for the UI
+  XFile? _pickedImage;
+  Uint8List? _pickedImageBytes;
 
   final List<Map<String, String>> _categories = [
     {'id': 'cat_electronics', 'name': 'Electronics & Gadgets'},
@@ -44,57 +46,58 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
     super.dispose();
   }
 
-  // The local image picker works perfectly without the cloud
   Future<void> _pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
-      final result = await picker.pickImage(source: source);
+      final result = await picker.pickImage(
+        source: source,
+        imageQuality: 55,
+        maxWidth: 900,
+        maxHeight: 900,
+      );
       if (result != null) {
+        final imageBytes = await result.readAsBytes();
+        if (!mounted) return;
         setState(() {
-          _pickedImage = File(result.path);
+          _pickedImage = result;
+          _pickedImageBytes = imageBytes;
         });
       }
     } catch (e) {
-      if(mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
   }
 
   Future<void> _handleSubmit() async {
     if (_formKey.currentState!.validate()) {
-      final submissionNotifier = ref.read(createPostControllerProvider.notifier);
+      final submissionNotifier = ref.read(
+        createPostControllerProvider.notifier,
+      );
 
-      // MOCK FEATURE LOGIC: If they picked an image, acknowledge it but don't upload it.
-      if (_pickedImage != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image staged locally. (Cloud Sync disabled for demo)'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.blueGrey,
-          ),
-        );
-      }
-
-      // Publish the text data to Firestore exactly as before
       await submissionNotifier.submitItem(
-            title: _titleController.text.trim(),
-            description: _descriptionController.text.trim(),
-            type: _itemType,
-            categoryId: _selectedCategoryId!,
-            categoryName: _selectedCategoryName!,
-            locationName: _locationNameController.text.trim(),
-            locationDetails: _locationDetailsController.text.trim(),
-            imageUrl: null, // Intentionally null so Firestore is happy
-          );
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        type: _itemType,
+        categoryId: _selectedCategoryId!,
+        categoryName: _selectedCategoryName!,
+        locationName: _locationNameController.text.trim(),
+        locationDetails: _locationDetailsController.text.trim(),
+        imageBytes: _pickedImageBytes,
+        imageFileName: _pickedImage?.name,
+      );
 
       if (ref.read(createPostControllerProvider).hasError == false && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Post published successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Post published successfully!'),
+            backgroundColor: Colors.green,
+          ),
         );
-        context.pop(); 
+        context.pop();
       }
     }
   }
@@ -119,8 +122,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
               children: [
                 SegmentedButton<String>(
                   segments: const [
-                    ButtonSegment(value: 'lost', label: Text('I Lost Something'), icon: Icon(Icons.search_off)),
-                    ButtonSegment(value: 'found', label: Text('I Found Something'), icon: Icon(Icons.check_circle_outline)),
+                    ButtonSegment(
+                      value: 'lost',
+                      label: Text('I Lost Something'),
+                      icon: Icon(Icons.search_off),
+                    ),
+                    ButtonSegment(
+                      value: 'found',
+                      label: Text('I Found Something'),
+                      icon: Icon(Icons.check_circle_outline),
+                    ),
                   ],
                   selected: {_itemType},
                   onSelectionChanged: (Set<String> newSelection) {
@@ -144,27 +155,40 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
 
                 TextFormField(
                   controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Item Name / Title', border: OutlineInputBorder(), hintText: 'e.g., iPhone 13 Pro, Black Wallet'),
-                  validator: (value) => value!.isEmpty ? 'Please specify item name' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Item Name / Title',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g., iPhone 13 Pro, Black Wallet',
+                  ),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Please specify item name' : null,
                 ),
                 const SizedBox(height: 16),
 
                 DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                  ),
                   items: _categories.map((cat) {
-                    return DropdownMenuItem(value: cat['id'], child: Text(cat['name']!));
+                    return DropdownMenuItem(
+                      value: cat['id'],
+                      child: Text(cat['name']!),
+                    );
                   }).toList(),
                   onChanged: (val) {
                     setState(() {
                       _selectedCategoryId = val;
-                      _selectedCategoryName = _categories.firstWhere((element) => element['id'] == val)['name'];
+                      _selectedCategoryName = _categories.firstWhere(
+                        (element) => element['id'] == val,
+                      )['name'];
                     });
                   },
-                  validator: (value) => value == null ? 'Please select a category' : null,
+                  validator: (value) =>
+                      value == null ? 'Please select a category' : null,
                 ),
                 const SizedBox(height: 24),
 
-                // THE MOCK UI - Fully interactive but safely disconnected from the cloud
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
@@ -174,10 +198,16 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Text('Item Photo (Optional)', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                      const Text(
+                        'Item Photo (Optional)',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
                       const SizedBox(height: 16),
-                      
-                      if (_pickedImage != null)
+
+                      if (_pickedImageBytes != null)
                         Stack(
                           alignment: Alignment.topRight,
                           children: [
@@ -186,17 +216,28 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                               width: double.infinity,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
-                                image: DecorationImage(image: FileImage(_pickedImage!), fit: BoxFit.cover),
+                                image: DecorationImage(
+                                  image: MemoryImage(_pickedImageBytes!),
+                                  fit: BoxFit.cover,
+                                ),
                               ),
                             ),
                             IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.white),
+                              icon: const Icon(
+                                Icons.cancel,
+                                color: Colors.white,
+                              ),
                               onPressed: () {
                                 setState(() {
                                   _pickedImage = null;
+                                  _pickedImageBytes = null;
                                 });
                               },
-                              style: IconButton.styleFrom(backgroundColor: Colors.red.withValues(alpha: 0.7)),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.red.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
                             ),
                           ],
                         )
@@ -211,14 +252,24 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.add_a_photo, size: 64, color: Colors.grey.shade600),
+                              Icon(
+                                Icons.add_a_photo,
+                                size: 64,
+                                color: Colors.grey.shade600,
+                              ),
                               const SizedBox(height: 12),
-                              Text('No image selected', style: TextStyle(color: Colors.grey.shade700, fontStyle: FontStyle.italic)),
+                              Text(
+                                'No image selected',
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontStyle: FontStyle.italic,
+                                ),
+                              ),
                             ],
                           ),
                         ),
                       const SizedBox(height: 16),
-                      
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
@@ -226,13 +277,17 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                             onPressed: () => _pickImage(ImageSource.camera),
                             icon: const Icon(Icons.camera_alt),
                             label: const Text('Camera'),
-                            style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                            ),
                           ),
                           TextButton.icon(
                             onPressed: () => _pickImage(ImageSource.gallery),
                             icon: const Icon(Icons.photo_library),
                             label: const Text('Gallery'),
-                            style: TextButton.styleFrom(foregroundColor: Colors.teal),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.teal,
+                            ),
                           ),
                         ],
                       ),
@@ -244,34 +299,72 @@ class _CreatePostScreenState extends ConsumerState<CreatePostScreen> {
                 TextFormField(
                   controller: _descriptionController,
                   maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Detailed Description', border: OutlineInputBorder(), hintText: 'Provide unique identifiers to help verification'),
-                  validator: (value) => value!.isEmpty ? 'Please add a description' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Detailed Description',
+                    border: OutlineInputBorder(),
+                    hintText: 'Provide unique identifiers to help verification',
+                  ),
+                  validator: (value) =>
+                      value!.isEmpty ? 'Please add a description' : null,
                 ),
                 const SizedBox(height: 24),
 
-                const Text('Location Context', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal)),
+                const Text(
+                  'Location Context',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.teal,
+                  ),
+                ),
                 const SizedBox(height: 12),
 
                 TextFormField(
                   controller: _locationNameController,
-                  decoration: const InputDecoration(labelText: 'General Location', border: OutlineInputBorder(), hintText: 'e.g., Kuliyyah of ICT'),
-                  validator: (value) => value!.isEmpty ? 'General location context required' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'General Location',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g., Kuliyyah of ICT',
+                  ),
+                  validator: (value) => value!.isEmpty
+                      ? 'General location context required'
+                      : null,
                 ),
                 const SizedBox(height: 16),
 
                 TextFormField(
                   controller: _locationDetailsController,
-                  decoration: const InputDecoration(labelText: 'Specific Details / Spot', border: OutlineInputBorder(), hintText: 'e.g., On the corner table'),
-                  validator: (value) => value!.isEmpty ? 'Please provide spot detail context' : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Specific Details / Spot',
+                    border: OutlineInputBorder(),
+                    hintText: 'e.g., On the corner table',
+                  ),
+                  validator: (value) => value!.isEmpty
+                      ? 'Please provide spot detail context'
+                      : null,
                 ),
                 const SizedBox(height: 32),
 
                 ElevatedButton(
                   onPressed: submissionState.isLoading ? null : _handleSubmit,
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    backgroundColor: Colors.teal,
+                    foregroundColor: Colors.white,
+                  ),
                   child: submissionState.isLoading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                      : const Text('PUBLISH DISCOVERY REPORT', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(color: Colors.white),
+                        )
+                      : const Text(
+                          'PUBLISH DISCOVERY REPORT',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
             ),

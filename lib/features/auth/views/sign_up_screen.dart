@@ -32,14 +32,16 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (_formKey.currentState!.validate()) {
       // Trigger the Riverpod Auth Controller's register method
       // Note: We are passing the phone number here now!
-      await ref.read(authControllerProvider.notifier).register(
+      await ref
+          .read(authControllerProvider.notifier)
+          .register(
             _emailController.text.trim(),
             _passwordController.text.trim(),
             _nameController.text.trim(),
             _matricNoController.text.trim(),
             _phoneController.text.trim(), // NEW: Passing phone data
           );
-      
+
       // If successful, navigate to the home dashboard
       if (ref.read(authControllerProvider).hasError == false && mounted) {
         context.go('/home');
@@ -70,7 +72,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   const Text(
                     'Join CampusFind',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.teal),
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                    ),
                   ),
                   const SizedBox(height: 32),
 
@@ -95,10 +101,11 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.person),
                     ),
-                    validator: (value) => value!.isEmpty ? 'Name is required' : null,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Name is required' : null,
                   ),
                   const SizedBox(height: 16),
-                  
+
                   TextFormField(
                     controller: _matricNoController,
                     decoration: const InputDecoration(
@@ -106,21 +113,24 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.badge),
                     ),
-                    validator: (value) => value!.isEmpty ? 'Matric Number is required' : null,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Matric Number is required' : null,
                   ),
                   const SizedBox(height: 16),
 
                   // NEW: Phone Number Input Field
                   TextFormField(
                     controller: _phoneController,
-                    keyboardType: TextInputType.phone, // Opens number pad on mobile!
+                    keyboardType:
+                        TextInputType.phone, // Opens number pad on mobile!
                     decoration: const InputDecoration(
                       labelText: 'Mobile Phone Number',
                       hintText: 'e.g., 0123456789',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.phone_android),
                     ),
-                    validator: (value) => value!.isEmpty ? 'Phone number is required' : null,
+                    validator: (value) =>
+                        value!.isEmpty ? 'Phone number is required' : null,
                   ),
                   const SizedBox(height: 16),
 
@@ -133,8 +143,12 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       prefixIcon: Icon(Icons.email),
                     ),
                     validator: (value) {
-                      if (value == null || value.isEmpty) return 'Email is required';
-                      if (!value.endsWith('@live.iium.edu.my')) return 'Must use @live.iium.edu.my';
+                      if (value == null || value.isEmpty) {
+                        return 'Email is required';
+                      }
+                      if (!value.endsWith('@live.iium.edu.my')) {
+                        return 'Must use @live.iium.edu.my';
+                      }
                       return null;
                     },
                   ),
@@ -148,7 +162,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock),
                     ),
-                    validator: (value) => value!.length < 6 ? 'Password must be at least 6 characters' : null,
+                    validator: (value) => value!.length < 6
+                        ? 'Password must be at least 6 characters'
+                        : null,
                   ),
                   const SizedBox(height: 24),
 
@@ -160,8 +176,20 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                       foregroundColor: Colors.white,
                     ),
                     child: authState.isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                        : const Text('REGISTER NOW', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'REGISTER NOW',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ],
               ),

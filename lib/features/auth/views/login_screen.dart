@@ -25,11 +25,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       // Trigger the Riverpod Auth Controller
-      await ref.read(authControllerProvider.notifier).login(
-            _emailController.text.trim(),
-            _passwordController.text.trim(),
-          );
-      
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(_emailController.text.trim(), _passwordController.text.trim());
+
       // If there's no error in the state, navigate to home
       if (ref.read(authControllerProvider).hasError == false && mounted) {
         context.go('/home');
@@ -53,12 +52,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Icon(Icons.account_balance, size: 80, color: Colors.teal),
+                  const Icon(
+                    Icons.account_balance,
+                    size: 80,
+                    color: Colors.teal,
+                  ),
                   const SizedBox(height: 16),
                   const Text(
                     'CampusFind',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.teal),
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal,
+                    ),
                   ),
                   const Text(
                     'Secure Campus Recovery',
@@ -109,7 +116,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.lock),
                     ),
-                    validator: (value) => value!.length < 6 ? 'Password too short' : null,
+                    validator: (value) =>
+                        value!.length < 6 ? 'Password too short' : null,
                   ),
                   const SizedBox(height: 24),
 
@@ -122,12 +130,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       foregroundColor: Colors.white,
                     ),
                     child: authState.isLoading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white))
-                        : const Text('SECURE LOGIN', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'SECURE LOGIN',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
 
-                  const SizedBox(height:16),
-                  
+                  const SizedBox(height: 16),
+
                   //New Text Button
                   TextButton(
                     onPressed: () => context.push('/signup'),
@@ -135,7 +155,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       "Don't have an account? Sign up here.",
                       style: TextStyle(color: Colors.teal),
                     ),
-                  )
+                  ),
                 ],
               ),
             ),

@@ -12,7 +12,7 @@ class ItemRepository {
     try {
       // Create a new document reference with an auto-generated ID
       DocumentReference docRef = _itemsCollection.doc();
-      
+
       // We need to inject the auto-generated ID back into the model before saving
       ItemModel itemWithId = ItemModel(
         itemId: docRef.id,
@@ -32,7 +32,7 @@ class ItemRepository {
       );
 
       await docRef.set(itemWithId.toMap());
-      
+
       // TODO: Trigger the Gemini AI Smart Match background service here later
 
       return docRef.id;
@@ -50,10 +50,13 @@ class ItemRepository {
         .orderBy('reportedAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return ItemModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return ItemModel.fromMap(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            );
+          }).toList();
+        });
   }
 
   /// Streams all ACTIVE FOUND items, ordered by newest first
@@ -65,11 +68,15 @@ class ItemRepository {
         .orderBy('reportedAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        return ItemModel.fromMap(doc.data() as Map<String, dynamic>, doc.id);
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            return ItemModel.fromMap(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            );
+          }).toList();
+        });
   }
+
   /// Fetches a one-time list of active items by type (used by the AI matching service)
   Future<List<ItemModel>> getActiveItemsByTypeOnce(String type) async {
     try {
@@ -87,4 +94,3 @@ class ItemRepository {
     }
   }
 }
-

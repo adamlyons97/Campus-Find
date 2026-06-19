@@ -7,9 +7,10 @@ final matchRepositoryProvider = Provider<MatchRepository>((ref) {
   return MatchRepository();
 });
 
-// A family stream provider. It requires an 'itemId' string to be passed in, 
+// A family stream provider. It requires an 'itemId' string to be passed in,
 // and returns a live stream of matches just for that specific item!
-final itemMatchesStreamProvider = StreamProvider.family<List<MatchModel>, String>((ref, itemId) {
-  final repository = ref.watch(matchRepositoryProvider);
-  return repository.getMatchesForItem(itemId);
-});
+final itemMatchesStreamProvider =
+    StreamProvider.family<List<MatchModel>, String>((ref, itemId) {
+      final repository = ref.watch(matchRepositoryProvider);
+      return repository.getMatchesForItem(itemId);
+    });
