@@ -45,6 +45,8 @@ Advanced form entry allowing users to input specific item descriptions, select p
 A smart feature utilizing natural language processing to alert users if a newly reported lost item resembles an existing found item listing.
 4. **Secure Claim & Ownership Verification:**
 A secure claim process that allows users to prove ownership of a lost item by providing private item details. The system verifies the claim before revealing the reporter’s contact information, ensuring that items are returned only to their rightful owners while preventing false claims and unauthorized collection.
+5. **Status Management:**
+Live indicators tracking items across *Active*, *Claimed*, and *Resolved* states.
 
 
 ---
